@@ -12,7 +12,7 @@
 
     <groupId>org.springframework.ai.mcp.sample</groupId>
     <artifactId>mcp-query-stdio-server</artifactId>
-    <version>0.1.0</version>
+    <version>0.0.1-SNAPSHOT</version>
 
     <name>Spring AI MCP Query STDIO server</name>
     <description>Spring AI MCP Query STDIO server</description>
