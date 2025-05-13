@@ -1,0 +1,2446 @@
+openapi: 3.0.3
+info:
+  title: Common Intacct REST API Services
+  description: |
+    Services available throughout the API.
+  version: '1.0'
+servers:
+  - url: https://api.intacct.com/ia/api/v1
+tags:
+  - name: Allowed operations
+    description: >-
+      Returns allowed operations for specified objects. Note that individual
+      users may have role or permission settings that restrict them from
+      performing certain operations.
+    x-displayName: Allowed operations
+  - name: Composite requests
+    description: >-
+      Composite request service for submitting multiple "subrequests" in a
+      single POST request. See the [Composite request service
+      guide](https://developer.sage.com/intacct/docs/developer-portal/guides/bulk-requests/)
+      for a full description and examples.
+    x-displayName: Composite requests
+  - name: Models
+    description: >-
+      Use the model service to find details about a resource, such as an
+      object's queryable fields and their data types, valid values (for enums)
+      and relationships to other objects. You can use any of those within the
+      select and/or filter elements of a query. The model service works with all
+      resource types including standard objects, custom objects, services, and
+      workflows.
+    x-displayName: Models
+  - name: Query
+    description: >-
+      The query service lets you query the data in a Sage Intacct company to
+      return a list of objects that match given conditions. You can specify
+      complex filter expressions and define the list of fields that you want
+      included for each object in the results.
+    x-displayName: Query
+  - name: System views
+    description: >-
+      System views are pre-defined query filters for objects. Each time you get
+      a view, the response includes all data that matches the filtering and
+      sorting options set up in the view.
+    x-displayName: System views
+  - name: User views
+    description: >-
+      User views are stored queries on objects that can be used to get a
+      filtered list of objects based on current data at any given time.
+    x-displayName: User views
+paths:
+  /services/core/allowed-operations/list:
+    post:
+      description: Get allowed operations
+      summary: Returns allowed operations for specified objects.
+      tags:
+        - Allowed operations
+      operationId: list-allowed-operations
+      requestBody:
+        description: allowed operations request
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/core-allowed-operations-request'
+            examples:
+              Vendor Allowed Operations Request:
+                value:
+                  object: vendor
+                  keys:
+                    - '1'
+                    - '6'
+                    - '65'
+                  operations:
+                    - canView
+                    - canEdit
+                    - canDelete
+                  options:
+                    includePrivate: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                title: Allowed operations
+                properties:
+                  ia::result:
+                    $ref: '#/components/schemas/core-allowed-operations-response'
+                  ia::meta:
+                    $ref: '#/components/schemas/metadata'
+              examples:
+                Vendor Allowed Operations Response:
+                  value:
+                    ia::result:
+                      - key: '1'
+                        operations:
+                          - canView
+                      - key: '65'
+                        operations:
+                          - canView
+                    ia::meta:
+                      totalCount: 2
+                      totalSuccess: 2
+                      totalError: 0
+        '400':
+          $ref: '#/components/responses/400error'
+      security:
+        - OAuth2: []
+  /services/core/composite:
+    post:
+      summary: Send a composite request
+      description: Sends multiple requests within a single POST request.
+      tags:
+        - Composite requests
+      operationId: post-services-composite
+      requestBody:
+        description: Array of subrequests
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/core-composite-request'
+            examples:
+              Multiple independent requests to change employee location:
+                value:
+                  - method: PATCH
+                    path: /objects/company-config/employee/26
+                    body:
+                      location:
+                        key: '6'
+                  - method: PATCH
+                    path: /objects/company-config/employee/33
+                    body:
+                      location:
+                        key: '6'
+                  - method: PATCH
+                    path: /objects/company-config/employee/62
+                    body:
+                      location:
+                        key: '6'
+              Multiple requests using data from previous:
+                value:
+                  - method: GET
+                    path: /objects/company-config/employee/52
+                    resultReference: employee
+                  - method: POST
+                    path: /services/core/query
+                    body:
+                      object: employee
+                      fields:
+                        - id
+                        - jobTitle
+                        - department.key
+                        - employeeType.id
+                      filters:
+                        - $eq:
+                            department.key: '@{employee.department.key}'
+                        - $eq:
+                            employeeType.id: '@{employee.employeeType.id}'
+                      filterExpression: 1 and 2
+                      orderBy:
+                        - id: asc
+              Multi-status example:
+                value:
+                  - method: GET
+                    path: >-
+                      /services/core/async/job-status?jobId=NjQ2NTc2MzAzMVl1Ul9qVmd6M2t4M2pPdEJya2J5Y2dBQUFBQTE
+                  - method: GET
+                    path: /objects/company-config/contact/2662
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ia::result:
+                    type: array
+                    description: Composite response
+                    items:
+                      type: object
+                      properties:
+                        ia::status:
+                          type: integer
+                          description: HTTP status code
+                        ia::result:
+                          anyOf:
+                            - type: object
+                              description: Response of CRUD on a single object
+                            - type: array
+                              description: Response of a query
+                              items:
+                                type: object
+                        ia::meta:
+                          anyOf:
+                            - $ref: '#/components/schemas/metadata'
+                            - $ref: '#/components/schemas/metadata-pages'
+                  ia::meta:
+                    $ref: '#/components/schemas/metadata'
+              examples:
+                Multiple independent requests to change employee location:
+                  value:
+                    ia::result:
+                      - ia::result:
+                          key: '26'
+                          id: '0014'
+                          href: /objects/company-config/employee/26
+                        ia::meta:
+                          totalCount: 1
+                        ia::status: 200
+                      - ia::result:
+                          key: '33'
+                          id: '1'
+                          href: /objects/company-config/employee/33
+                        ia::meta:
+                          totalCount: 1
+                        ia::status: 200
+                      - ia::result:
+                          key: '62'
+                          id: '2'
+                          href: /objects/company-config/employee/62
+                        ia::meta:
+                          totalCount: 1
+                        ia::status: 200
+                    ia::meta:
+                      totalCount: 3
+                Multiple Requests using data from previous:
+                  value:
+                    ia::result:
+                      - ia::result:
+                          key: '52'
+                          id: Emp2
+                          SSN: '100000001'
+                          jobTitle: Sr Software Eng
+                          location:
+                            id: '10'
+                            key: '15'
+                            name: Indianapolis
+                            href: /objects/company-config/location/15
+                          department:
+                            id: '10'
+                            key: '10'
+                            name: QA - II
+                            href: /objects/company-config/department/10
+                          manager:
+                            key: '11'
+                            id: '10'
+                            href: /objects/company-config/employee/11
+                          birthDate: '1984-04-14'
+                          startDate: '2021-05-01'
+                          endDate: '2025-04-02'
+                          status: active
+                          employeeType:
+                            id: Part Time
+                            key: '2'
+                            href: /objects/company-config/employee-type/2
+                          gender: female
+                          terminationType: involuntary
+                          primaryContact:
+                            id: abc(C02)
+                            name: abc(C02)
+                            key: '205'
+                            href: /objects/company-config/contact/205
+                          defaultCurrency: MXN
+                          earningType:
+                            key: '2'
+                            id: earningType2
+                            name: earningType2
+                            href: /objects/company-config/earning-type/2
+                          class:
+                            id: SW-Office
+                            name: Office Software
+                            key: '9'
+                            href: /objects/company-config/class/9
+                          href: /objects/company-config/employee/52
+                        ia::meta:
+                          totalCount: 1
+                        ia::status: 200
+                      - ia::result:
+                          - id: Emp2
+                            jobTitle: Sr Software Eng
+                            department.key: '10'
+                            employeeType.id: Part Time
+                          - id: Emp10
+                            jobTitle: QA Engineer
+                            department.key: '10'
+                            employeeType.id: Part Time
+                          - id: Emp22
+                            jobTitle: Architect
+                            department.key: '10'
+                            employeeType.id: Full Time
+                        ia::meta:
+                          totalCount: 3
+                          start: 1
+                          pageSize: 100
+                          next: null
+                          previous: null
+                        ia::status: 200
+                    ia::meta:
+                      totalCount: 2
+        '207':
+          description: Multi-Status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ia::result:
+                    type: array
+                    description: Composite response
+                    items:
+                      type: object
+                      properties:
+                        ia::status:
+                          type: integer
+                          description: HTTP status code
+                        ia::result:
+                          anyOf:
+                            - type: object
+                              description: Response of CRUD on a single object
+                            - type: array
+                              description: Response of a query
+                              items:
+                                type: object
+                            - type: object
+                              description: Error response
+                              properties:
+                                ia::error:
+                                  $ref: '#/components/schemas/error'
+                        ia::error:
+                          $ref: '#/components/schemas/error'
+                        ia::meta:
+                          anyOf:
+                            - $ref: '#/components/schemas/metadata'
+                            - $ref: '#/components/schemas/metadata-pages'
+                  ia::meta:
+                    $ref: '#/components/schemas/metadata'
+              examples:
+                Multi-status example:
+                  value:
+                    ia::result:
+                      - ia::error:
+                          code: notFound
+                          message: >-
+                            Asynchronous job
+                            6465763031YSPy9lgWtJCMGZ6UkUbA6QAAAAY1 status could
+                            not be found
+                          supportId: tqKR0%7EYsTZeDEdVao0_h01dZFQqgAAAAY
+                        ia::status: 404
+                      - ia::error:
+                          code: unprocessed
+                          message: Operation skipped due to atomic transaction failure
+                        ia::status: 422
+                    ia::meta:
+                      totalCount: 2
+                      totalSuccess: 0
+                      totalError: 2
+        '400':
+          $ref: '#/components/responses/400error'
+      security:
+        - OAuth2: []
+  /services/core/model:
+    get:
+      summary: Get an object model definition
+      description: >-
+        List all the fields and relationships for an object, service, or other
+        resource. Example requests:
+
+
+        - Short definition of all resources in the current version:
+        `/services/core/model`
+
+        - Full model of a specified resource:
+        `/services/core/model?name=company-config/department`
+
+        - Full model or a resource in a specific API version:
+        `/services/core/model?name=projects/task&version=v1`
+
+        - Full model for all resources of a specified type in a version:
+        `/services/core/model?version=v1&schema=true&type=workflow`
+      operationId: get-services-model
+      tags:
+        - Models
+      parameters:
+        - name: name
+          description: >-
+            Resource name, in the form `<application-name>/<resource name>`.
+            Note that some services have 3-part names, such as
+            `company-config/document-sequence/get-next-sequence`. For custom
+            objects use `platform-apps/nsp::<object-name>`.
+          in: query
+          schema:
+            type: string
+          example: accounts-payable/vendor
+        - name: type
+          description: >-
+            A resource type to get a list of all resources of that type.
+
+
+            - `object`
+
+            - `service`
+
+            - `workflow`
+
+            - A specific resource type, such as `ownedObject`. The resource type
+            is one of the fields returned in the resource model.
+
+            - A comma-separated list of resource types. `object` and `service`
+            cannot be included in the list.
+          in: query
+          schema:
+            type: string
+          example: object
+        - name: version
+          description: >-
+            The API version for which you want a list of resources or a resource
+            model. Use with the `name` parameter to ger a resource model as
+            defined in a specific version of the API. Use `version=ALL` to get a
+            list of versions. The default is the version used in the URL path of
+            the `model` request.
+          in: query
+          schema:
+            type: string
+          example: v1
+        - name: schema
+          description: >-
+            Set to `true` to return the full model of the resource. Set to
+            `false` to return the short definition. The default is `true` when
+            requesting a single resource and `false` when requesting a list of
+            resources.
+          in: query
+          schema:
+            type: string
+          example: true
+        - name: tags
+          description: >-
+            Use `true` (default) to return the resource schema formatted as-is.
+            Use `false` to return the schema without the wrapping objects for
+            groups, refs, and lists.
+          in: query
+          schema:
+            type: string
+          example: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                title: Model response
+                properties:
+                  ia::result:
+                    $ref: '#/components/schemas/object-model'
+                  ia::meta:
+                    $ref: '#/components/schemas/metadata'
+              examples:
+                Model for department:
+                  value:
+                    ia::result:
+                      fields:
+                        id:
+                          mutable: false
+                          nullable: false
+                          type: string
+                          readOnly: false
+                          writeOnly: false
+                          required: false
+                        key:
+                          readOnly: true
+                          type: string
+                          writeOnly: false
+                          required: false
+                          nullable: true
+                          mutable: false
+                        name:
+                          nullable: false
+                          type: string
+                          readOnly: false
+                          writeOnly: false
+                          required: false
+                          mutable: true
+                        reportTitle:
+                          nullable: true
+                          type: string
+                          readOnly: false
+                          writeOnly: false
+                          required: false
+                          mutable: true
+                        status:
+                          enum:
+                            - active
+                            - activeNonPosting
+                            - inactive
+                          type: string
+                          readOnly: false
+                          writeOnly: false
+                          required: false
+                          nullable: false
+                          mutable: true
+                      groups:
+                        audit:
+                          fields:
+                            createdBy:
+                              readOnly: true
+                              type: string
+                              writeOnly: false
+                              required: false
+                              nullable: true
+                              mutable: false
+                            createdDateTime:
+                              format: date-time
+                              readOnly: true
+                              type: string
+                              writeOnly: false
+                              required: false
+                              nullable: true
+                              mutable: false
+                            modifiedBy:
+                              readOnly: true
+                              type: string
+                              writeOnly: false
+                              required: false
+                              nullable: true
+                              mutable: false
+                            modifiedDateTime:
+                              format: date-time
+                              readOnly: true
+                              type: string
+                              writeOnly: false
+                              required: false
+                              nullable: true
+                              mutable: false
+                      httpMethods: OPTIONS,GET,POST,DELETE,PATCH
+                      refs:
+                        parent:
+                          apiObject: company-config/department
+                          fields:
+                            id:
+                              type: string
+                              readOnly: false
+                              writeOnly: false
+                              required: false
+                              nullable: true
+                              mutable: true
+                            key:
+                              nullable: true
+                              type: string
+                              readOnly: false
+                              writeOnly: false
+                              required: false
+                              mutable: true
+                            name:
+                              readOnly: true
+                              type: string
+                              writeOnly: false
+                              required: false
+                              nullable: true
+                              mutable: false
+                        supervisor:
+                          apiObject: company-config/employee
+                          fields:
+                            id:
+                              type: string
+                              readOnly: false
+                              writeOnly: false
+                              required: false
+                              nullable: true
+                              mutable: true
+                            key:
+                              nullable: true
+                              type: string
+                              readOnly: false
+                              writeOnly: false
+                              required: false
+                              mutable: true
+                            name:
+                              readOnly: true
+                              type: string
+                              writeOnly: false
+                              required: false
+                              nullable: true
+                              mutable: false
+                      lists: []
+                      idempotenceSupported: true
+                    ia::meta:
+                      totalCount: 1
+                      totalSuccess: 1
+                      totalError: 0
+        '400':
+          $ref: '#/components/responses/400error'
+      security:
+        - OAuth2: []
+  /services/core/query:
+    post:
+      summary: Query an object
+      description: Queries an object for filtered data.
+      operationId: post-services-query
+      tags:
+        - Query
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/core-query'
+            examples:
+              Query vendor:
+                value:
+                  object: accounts-payable/vendor
+                  fields:
+                    - id
+                    - name
+                    - status
+                    - href
+                  filters:
+                    - $eq:
+                        status: active
+                    - $eq:
+                        billingType: openItem
+                  filterExpression: 1 and 2
+                  filterParameters:
+                    caseSensitiveComparison: true
+                    includePrivate: true
+                  orderBy:
+                    - id: asc
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                title: Query results
+                properties:
+                  ia::result:
+                    type: array
+                    description: Fields requested in query
+                    items:
+                      type: object
+                      description: List of fields and their values
+                      additionalProperties:
+                        oneOf:
+                          - type: string
+                            nullable: true
+                          - type: number
+                          - type: object
+                          - type: boolean
+                  ia::meta:
+                    $ref: '#/components/schemas/metadata-pages'
+              examples:
+                Response - Query vendor:
+                  value:
+                    ia::result:
+                      - id: Vend-00002
+                        name: Test vendor
+                        status: active
+                        href: /objects/accounts-payable/vendor/85
+                      - id: VEND-00010
+                        name: Design Works
+                        status: active
+                        href: /objects/accounts-payable/vendor/111
+                    ia::meta:
+                      totalCount: 2
+                      start: 1
+                      pageSize: 100
+                      next: null
+                      previous: null
+        '400':
+          $ref: '#/components/responses/400error'
+      security:
+        - OAuth2: []
+  /objects/core/system-view:
+    parameters:
+      - name: name
+        description: >-
+          The name of a system view, in the form `<application-name>/<object
+          name>` to get all views defined for an object or
+          `<application-name>/<object name>::<view ID>` to get a specific system
+          view.
+        in: query
+        schema:
+          type: string
+        required: true
+        example: accounts-payable/vendor::systemVendorFW1
+    get:
+      summary: Get a system view
+      description: Returns all system views for an object or a specified system view.
+      tags:
+        - System views
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                title: Details of the system view
+                properties:
+                  ia::result:
+                    $ref: '#/components/schemas/core-system-view'
+                  ia::meta:
+                    $ref: '#/components/schemas/metadata'
+        '400':
+          $ref: '#/components/responses/400error'
+      operationId: get-core-system-view-key
+      security:
+        - OAuth2: []
+  /objects/core/user-view:
+    get:
+      summary: List user views
+      description: >-
+        Returns a collection with a key, ID, and link for each user view. This
+        operation is mostly for use in testing; use the query service to find
+        user views that meet specific criteria and to specify the properties
+        that you want in the response.
+      tags:
+        - User views
+      operationId: list-core-user-view
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                title: List of user views
+                properties:
+                  ia::result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/object-reference'
+                  ia::meta:
+                    $ref: '#/components/schemas/metadata-pages'
+        '400':
+          $ref: '#/components/responses/400error'
+      security:
+        - OAuth2: []
+    post:
+      summary: Create a user view
+      description: Creates a new  user view.
+      tags:
+        - User views
+      operationId: create-core-user-view
+      requestBody:
+        description: User view to create
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/core-user-view'
+                - $ref: '#/components/schemas/core-user-viewRequiredProperties'
+            examples:
+              User view for vendor:
+                value:
+                  name: Inactive vendors
+                  query:
+                    object: accounts-payable/vendor
+                    fields:
+                      - id
+                      - name
+                      - status
+                      - href
+                    filters:
+                      - $eq:
+                          status: inactive
+                      - $eq:
+                          billingType: balanceForward
+                    filterExpression: 1 and 2
+                    orderBy:
+                      - id: desc
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                title: New user view reference
+                properties:
+                  ia::result:
+                    $ref: '#/components/schemas/object-reference'
+                  ia::meta:
+                    $ref: '#/components/schemas/metadata'
+        '400':
+          $ref: '#/components/responses/400error'
+      security:
+        - OAuth2: []
+  /objects/core/user-view/{key}:
+    parameters:
+      - name: key
+        in: path
+        description: System-assigned key for the user view.
+        required: true
+        schema:
+          type: string
+        example: '262'
+    get:
+      summary: Get a user view
+      description: Returns detailed information for a specified user view.
+      tags:
+        - User views
+      operationId: get-core-user-view-key
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                title: Details of the user-view
+                properties:
+                  ia::result:
+                    $ref: '#/components/schemas/core-user-view'
+                  ia::meta:
+                    $ref: '#/components/schemas/metadata'
+              examples:
+                User view details:
+                  value:
+                    ia::result:
+                      key: '262'
+                      id: '262'
+                      name: Active vendors
+                      description: Active vendors with open billing items
+                      category: null
+                      owner:
+                        key: '1'
+                        id: Admin
+                        href: /objects/company-config/user/1
+                      object: accounts-payable/vendor
+                      query:
+                        object: accounts-payable/vendor
+                        fields:
+                          - id
+                          - name
+                          - status
+                          - href
+                        filters:
+                          - $eq:
+                              status: active
+                          - $eq:
+                              billingType: openItem
+                        filterExpression: 1 and 2
+                        orderBy:
+                          - id: asc
+                      status: active
+                      viewVersion: '0'
+                      audit:
+                        createdDateTime: '2021-05-16T17:41:55Z'
+                        modifiedDateTime: '2021-05-17T17:41:55Z'
+                        createdBy: '1'
+                        modifiedBy: '1'
+                      href: /objects/core/user-view/262
+                    ia::meta:
+                      totalCount: 1
+                      totalSuccess: 1
+                      totalError: 0
+        '400':
+          $ref: '#/components/responses/400error'
+      security:
+        - OAuth2: []
+    patch:
+      summary: Update a user view
+      description: >-
+        Updates an existing user view by setting field values. Any fields not
+        provided remain unchanged.
+      tags:
+        - User views
+      operationId: update-core-user-view-key
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/core-user-view'
+                - type: object
+                  properties:
+                    id:
+                      readOnly: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                title: Updated user view reference
+                properties:
+                  ia::result:
+                    $ref: '#/components/schemas/object-reference'
+                  ia::meta:
+                    $ref: '#/components/schemas/metadata'
+        '400':
+          $ref: '#/components/responses/400error'
+      security:
+        - OAuth2: []
+    delete:
+      summary: Delete a user view
+      description: Deletes a user view.
+      tags:
+        - User views
+      operationId: delete-core-user-view-key
+      responses:
+        '204':
+          description: No Content
+        '400':
+          $ref: '#/components/responses/400error'
+      security:
+        - OAuth2: []
+components:
+  schemas:
+    allowed-operations-request:
+      $ref: '#/components/schemas/core-allowed-operations-request'
+    core-allowed-operations-request:
+      description: allowed-operations
+      type: object
+      properties:
+        object:
+          type: string
+          description: >-
+            Object name to query, in the form `<application-name>/<object
+            name>`. (required)
+          example: accounts-payable/vendor
+        keys:
+          type: array
+          description: >-
+            Array of up to 1000 object keys for which you want to get allowed
+            operations. (required)
+          items:
+            type: string
+        operations:
+          type: array
+          description: >
+            List of operations that you want to query specifically. If not
+            provided, the response will include all supported operations.
+          items:
+            type: string
+        options:
+          type: object
+          description: Options for the request
+          properties:
+            includePrivate:
+              type: boolean
+              description: >-
+                By default, in a multi-entity company queries from the top-level
+                entity do not access data in private entities. Set
+                `includePrivate`` to true if you want to query data in private
+                entities.
+            moduleKey:
+              type: string
+    core-allowed-operations-response:
+      description: allowed-operations-response
+      type: array
+      items:
+        type: object
+        properties:
+          key:
+            type: string
+            description: System-assigned key of the object.
+          operations:
+            type: array
+            description: >
+              List of operations supported by the object. If a list of
+              `operations` was included in the request, the response only
+              includes supported operations from that list.
+            items:
+              type: string
+    metadata:
+      description: Metadata for response
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          description: Total count
+          readOnly: true
+          example: 3
+        totalSuccess:
+          type: integer
+          description: Total success
+          readOnly: true
+          example: 2
+        totalError:
+          type: integer
+          description: Total errors
+          readOnly: true
+          example: 1
+    error-response:
+      type: object
+      description: Error response
+      properties:
+        ia::result:
+          type: object
+          properties:
+            ia::error:
+              type: object
+              properties:
+                code:
+                  type: string
+                  example: invalidRequest
+                message:
+                  type: string
+                  example: Payload contains errors
+                supportId:
+                  type: string
+                  example: sQrM9%7EYdh5oDEWVb80mrn9xuHjoAAAABBQ
+                errorId:
+                  type: string
+                  example: REST-1064
+                additionalInfo:
+                  type: object
+                  properties:
+                    messageId:
+                      type: string
+                      example: IA.PAYLOAD_CONTAINS_ERRORS
+                    placeholders:
+                      type: string
+                      example: {}
+                    propertySet:
+                      type: string
+                      example: {}
+                details:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: invalidRequest
+                      message:
+                        type: string
+                        example: /newDate is not a valid field
+                      errorId:
+                        type: string
+                        example: REST-1043
+                      target:
+                        type: string
+                        example: /newDate
+                      additionalInfo:
+                        type: object
+                        properties:
+                          messageId:
+                            type: string
+                            example: IA.NOT_A_VALID_FIELD
+                          placeholders:
+                            type: string
+                            example:
+                              FIELD: /newDate
+                          propertySet:
+                            type: string
+                            example: {}
+            ia::meta:
+              $ref: '#/components/schemas/metadata'
+      example:
+        ia::result:
+          ia::error:
+            code: invalidRequest
+            message: A POST request requires a payload
+            errorId: REST-1028
+            additionalInfo:
+              messageId: IA.REQUEST_REQUIRES_A_PAYLOAD
+              placeholders:
+                OPERATION: POST
+              propertySet: {}
+            supportId: Kxi78%7EZuyXBDEGVHD2UmO1phYXDQAAAAo
+        ia::meta:
+          totalCount: 1
+          totalSuccess: 0
+          totalError: 1
+    core-composite-request:
+      type: array
+      items:
+        $ref: '#/components/schemas/core-composite'
+    error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: invalidRequest
+        message:
+          type: string
+          example: Payload contains errors
+        supportId:
+          type: string
+          example: sQrM9%7EYdh5oDEWVb80mrn9xuHjoAAAABBQ
+        errorId:
+          type: string
+          example: REST-1064
+        additionalInfo:
+          type: object
+          properties:
+            messageId:
+              type: string
+              example: IA.PAYLOAD_CONTAINS_ERRORS
+            placeholders:
+              type: string
+              example: {}
+            propertySet:
+              type: string
+              example: {}
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+                example: invalidRequest
+              message:
+                type: string
+                example: /newDate is not a valid field
+              errorId:
+                type: string
+                example: REST-1043
+              target:
+                type: string
+                example: /newDate
+              additionalInfo:
+                type: object
+                properties:
+                  messageId:
+                    type: string
+                    example: IA.NOT_A_VALID_FIELD
+                  placeholders:
+                    type: string
+                    example:
+                      FIELD: /newDate
+                  propertySet:
+                    type: string
+                    example: {}
+    core-composite:
+      description: >-
+        Schema for describing a single request that will be included as part of
+        a POST body sent to the composite request service.
+      type: object
+      properties:
+        method:
+          type: string
+          description: Operation for request.
+          nullable: false
+          example: POST
+          enum:
+            - GET
+            - POST
+            - PATCH
+            - DELETE
+        path:
+          type: string
+          description: Path to the request endpoint in the Intacct REST API.
+          nullable: false
+          pattern: ^\/(objects|services)\/[a-z_][a-z_0-9.\-:]+(.*)?$
+          example: /objects/accounts-payable/vendor
+        headers:
+          type: object
+          description: Headers needed for this request.
+          example:
+            Idempotency-Key: e9606bb2-6be1-4c9e-a2a7-134cd644a5ee
+        body:
+          type: object
+          description: Request body for POST or PATCH operations.
+          example:
+            lastName: Doe
+            firstName: John
+            id: Doe, John
+        resultReference:
+          type: string
+          description: >-
+            Reference identifier for success results, used by other requests as
+            input data.
+          nullable: false
+          example: contactRef
+      required:
+        - method
+        - path
+    metadata-pages:
+      description: Metadata for collection response
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          description: Total count
+          readOnly: true
+          example: 3
+        start:
+          type: integer
+          description: Start element number
+          readOnly: true
+          example: 1
+        pageSize:
+          type: integer
+          description: Page size
+          readOnly: true
+          example: 100
+        next:
+          type: integer
+          description: Next element number
+          readOnly: true
+          nullable: true
+          example: 101
+        previous:
+          type: integer
+          description: Previous element number
+          readOnly: true
+          nullable: true
+          example: null
+    object-model:
+      type: object
+      description: Generic response for object model definition
+      properties:
+        fields:
+          type: object
+        groups:
+          type: object
+        refs:
+          type: object
+        idempotenceSupported:
+          type: boolean
+          example: true
+          default: true
+        httpMethods:
+          type: string
+          example: OPTIONS,GET,DELETE,PATCH,POST
+    core-query:
+      description: Query request
+      type: object
+      properties:
+        object:
+          type: string
+          example: accounts-payable/vendor
+          description: >-
+            Object type to query, in the form `<application-name>/<object
+            name>`. For custom objects use `platform-apps/nsp::<object-name>`.
+        fields:
+          description: >-
+            List of fields to include in the response. Can be any combination of
+            these:
+
+
+            * The name of a field in the object that you are querying, such as
+            `id`.
+
+            * The name of a field in a related object, using the form
+            `relatedObjectName.fieldName`, such as `vendor.id`.
+
+            * The result of an aggregate function run against the values in the
+            returned objects. Use the form `function:fieldName`, such as
+            `min:startDate` to return the earliest starting date. Valid function
+            names are:
+
+                * `count`
+                * `avg`
+                * `sum`
+                * `min`
+                * `max`
+
+            * The result of an aggregate function run against the values in
+            related objects, using the form
+            `function:relatedObjectName.fieldName`, such as
+            `max:vendor.creditLimit`. The same functions are supported as for
+            object fields.
+          type: array
+          items:
+            type: string
+          example:
+            - key
+            - id
+            - max:vendor.creditLimit
+        filters:
+          description: >-
+            Filter conditions to select the objects to return based on their
+            field values. You use operators and conditions to build your filter,
+            such as `{"$eq":{"status":"active"}}` to select objects in which
+            `status` is equal to "active".
+          example:
+            - $eq:
+                status: active
+            - $gt:
+                totalDue: '1000'
+            - $contains:
+                name: Acme
+          type: array
+          items:
+            anyOf:
+              - title: equal
+                type: object
+                description: >-
+                  Field value must be equal to this specified value.
+
+
+                  For date fields, you can use these macro values that are
+                  relative to the current date or the `asOfDate` in
+                  [filterParameters](#filterParameters), if set:
+
+
+                  <table style="border-collapse: collapse; border: none">
+
+                  <tr>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>today</code></liu>
+
+                  <li><code>currentWeek</code></liu>
+
+                  <li><code>currentMonth</code></liu>
+
+                  <li><code>currentQuarter</code></liu>
+
+                  <li><code>currentYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>yesterday</code></liu>
+
+                  <li><code>lastWeek</code></liu>
+
+                  <li><code>priorMonth</code></liu>
+
+                  <li><code>priorQuarter</code></liu>
+
+                  <li><code>priorYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  </tr>
+
+                  </table>
+
+
+                  These are most useful for queries that you want to save and
+                  use repeatedly, such as for views or reports. Just change the
+                  `asOfDate` each time to retrieve the same data set for
+                  different time periods.
+
+
+                  For example, `{"eq":{"postingDate":"priorYear"}}`.
+                properties:
+                  $eq:
+                    type: object
+                    description: >-
+                      The field name and value to be compared with object
+                      values.
+                    additionalProperties:
+                      oneOf:
+                        - type: string
+                          nullable: true
+                        - type: number
+                        - type: boolean
+                example:
+                  $eq:
+                    status: active
+              - title: not equal
+                type: object
+                description: >-
+                  Field value must not be equal to this specified value.
+
+
+                  For date fields, you can use these macro values that are
+                  relative to the current date or the `asOfDate` in
+                  [filterParameters](#filterParameters), if set:
+
+
+                  <table style="border-collapse: collapse; border: none">
+
+                  <tr>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>today</code></liu>
+
+                  <li><code>currentWeek</code></liu>
+
+                  <li><code>currentMonth</code></liu>
+
+                  <li><code>currentQuarter</code></liu>
+
+                  <li><code>currentYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>yesterday</code></liu>
+
+                  <li><code>lastWeek</code></liu>
+
+                  <li><code>priorMonth</code></liu>
+
+                  <li><code>priorQuarter</code></liu>
+
+                  <li><code>priorYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  </tr>
+
+                  </table>
+
+
+                  These are most useful for queries that you want to save and
+                  use repeatedly, such as for views or reports. Just change the
+                  `asOfDate` each time to retrieve the same data set for
+                  different time periods.
+                properties:
+                  $ne:
+                    type: object
+                    description: >-
+                      The field name and value to be compared with object
+                      values.
+                    additionalProperties:
+                      oneOf:
+                        - type: string
+                          nullable: true
+                        - type: number
+                        - type: boolean
+                example:
+                  $ne:
+                    status: inactive
+              - title: less than
+                type: object
+                description: >-
+                  Field value must be less than this specified value.
+
+
+                  For date fields, you can use these macro values that are
+                  relative to the current date or the `asOfDate` in
+                  [filterParameters](#filterParameters), if set:
+
+
+                  <table style="border-collapse: collapse; border: none">
+
+                  <tr>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>today</code></liu>
+
+                  <li><code>currentWeek</code></liu>
+
+                  <li><code>currentMonth</code></liu>
+
+                  <li><code>currentQuarter</code></liu>
+
+                  <li><code>currentYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>yesterday</code></liu>
+
+                  <li><code>lastWeek</code></liu>
+
+                  <li><code>priorMonth</code></liu>
+
+                  <li><code>priorQuarter</code></liu>
+
+                  <li><code>priorYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  </tr>
+
+                  </table>
+
+
+                  These are most useful for queries that you want to save and
+                  use repeatedly, such as for views or reports. Just change the
+                  `asOfDate` each time to retrieve the same data set for
+                  different time periods.
+                properties:
+                  $lt:
+                    type: object
+                    description: >-
+                      The field name and value to be compared with object
+                      values.
+                    additionalProperties:
+                      oneOf:
+                        - type: string
+                        - type: number
+                example:
+                  $lt:
+                    totalDue: '100'
+              - title: less than or equal
+                type: object
+                description: >-
+                  Field value must be less than or equal to this specified
+                  value.
+
+
+                  For date fields, you can use these macro values that are
+                  relative to the current date or the `asOfDate` in
+                  [filterParameters](#filterParameters), if set:
+
+
+                  <table style="border-collapse: collapse; border: none">
+
+                  <tr>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>today</code></liu>
+
+                  <li><code>currentWeek</code></liu>
+
+                  <li><code>currentMonth</code></liu>
+
+                  <li><code>currentQuarter</code></liu>
+
+                  <li><code>currentYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>yesterday</code></liu>
+
+                  <li><code>lastWeek</code></liu>
+
+                  <li><code>priorMonth</code></liu>
+
+                  <li><code>priorQuarter</code></liu>
+
+                  <li><code>priorYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  </tr>
+
+                  </table>
+
+
+                  These are most useful for queries that you want to save and
+                  use repeatedly, such as for views or reports. Just change the
+                  `asOfDate` each time to retrieve the same data set for
+                  different time periods.
+                properties:
+                  $lte:
+                    type: object
+                    description: >-
+                      The field name and value to be compared with object
+                      values.
+                    additionalProperties:
+                      oneOf:
+                        - type: string
+                        - type: number
+                        - type: boolean
+                example:
+                  $lte:
+                    totalDue: '500'
+              - title: greater than
+                type: object
+                description: >-
+                  Field value must be greater than this specified value.
+
+
+                  For date fields, you can use these macro values that are
+                  relative to the current date or the `asOfDate` in
+                  [`filterParameters`](#filterParameters), if set:
+
+
+                  <table style="border-collapse: collapse; border: none">
+
+                  <tr>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>today</code></liu>
+
+                  <li><code>currentWeek</code></liu>
+
+                  <li><code>currentMonth</code></liu>
+
+                  <li><code>currentQuarter</code></liu>
+
+                  <li><code>currentYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>yesterday</code></liu>
+
+                  <li><code>lastWeek</code></liu>
+
+                  <li><code>priorMonth</code></liu>
+
+                  <li><code>priorQuarter</code></liu>
+
+                  <li><code>priorYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  </tr>
+
+                  </table>
+
+
+                  These are most useful for queries that you want to save and
+                  use repeatedly, such as for views or reports. Just change the
+                  `asOfDate` each time to retrieve the same data set for
+                  different time periods.
+                properties:
+                  $gt:
+                    type: object
+                    description: >-
+                      The field name and value to be compared with object
+                      values.
+                    additionalProperties:
+                      oneOf:
+                        - type: string
+                        - type: number
+                example:
+                  $gt:
+                    totalDue: '1000'
+              - title: greater than or equal
+                type: object
+                description: >-
+                  Field value must be greater than or equal to this specified
+                  value.
+
+
+                  For date fields, you can use these macro values that are
+                  relative to the current date or the `asOfDate` in
+                  [`filterParameters`](#filterParameters), if set:
+
+
+                  <table style="border-collapse: collapse; border: none">
+
+                  <tr>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>today</code></liu>
+
+                  <li><code>currentWeek</code></liu>
+
+                  <li><code>currentMonth</code></liu>
+
+                  <li><code>currentQuarter</code></liu>
+
+                  <li><code>currentYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>yesterday</code></liu>
+
+                  <li><code>lastWeek</code></liu>
+
+                  <li><code>priorMonth</code></liu>
+
+                  <li><code>priorQuarter</code></liu>
+
+                  <li><code>priorYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  </tr>
+
+                  </table>
+
+
+                  These are most useful for queries that you want to save and
+                  use repeatedly, such as for views or reports. Just change the
+                  `asOfDate` each time to retrieve the same data set for
+                  different time periods.
+                properties:
+                  $gte:
+                    type: object
+                    description: >-
+                      The field name and value to be compared with object
+                      values.
+                    additionalProperties:
+                      oneOf:
+                        - type: string
+                        - type: number
+                        - type: boolean
+                example:
+                  $gte:
+                    totalDue: '999'
+              - title: in
+                type: object
+                description: >-
+                  Field value is one of the specified values.
+
+
+                  For date fields, you can use these macro values that are
+                  relative to the current date or the `asOfDate` in
+                  [`filterParameters`](#filterParameters), if set:
+
+
+                  <table style="border-collapse: collapse; border: none">
+
+                  <tr>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>today</code></liu>
+
+                  <li><code>currentWeek</code></liu>
+
+                  <li><code>currentMonth</code></liu>
+
+                  <li><code>currentQuarter</code></liu>
+
+                  <li><code>currentYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>yesterday</code></liu>
+
+                  <li><code>lastWeek</code></liu>
+
+                  <li><code>priorMonth</code></liu>
+
+                  <li><code>priorQuarter</code></liu>
+
+                  <li><code>priorYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  </tr>
+
+                  </table>
+
+
+                  These are most useful for queries that you want to save and
+                  use repeatedly, such as for views or reports. Just change the
+                  `asOfDate` each time to retrieve the same data set for
+                  different time periods.
+                properties:
+                  $in:
+                    type: object
+                    description: >-
+                      The field name and list of values to be compared with
+                      object values.
+                    additionalProperties:
+                      type: array
+                      items:
+                        oneOf:
+                          - type: string
+                          - type: number
+                          - type: boolean
+                example:
+                  $in:
+                    firstName:
+                      - Tim
+                      - Anjali
+                      - Gabriel
+              - title: not in
+                type: object
+                description: >-
+                  Field value is not one of the specified values.
+
+
+                  For date fields, you can use these macro values that are
+                  relative to the current date or the `asOfDate` in
+                  [`filterParameters`](#filterParameters), if set:
+
+
+                  <table style="border-collapse: collapse; border: none">
+
+                  <tr>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>today</code></liu>
+
+                  <li><code>currentWeek</code></liu>
+
+                  <li><code>currentMonth</code></liu>
+
+                  <li><code>currentQuarter</code></liu>
+
+                  <li><code>currentYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>yesterday</code></liu>
+
+                  <li><code>lastWeek</code></liu>
+
+                  <li><code>priorMonth</code></liu>
+
+                  <li><code>priorQuarter</code></liu>
+
+                  <li><code>priorYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  </tr>
+
+                  </table>
+
+
+                  These are most useful for queries that you want to save and
+                  use repeatedly, such as for views or reports. Just change the
+                  `asOfDate` each time to retrieve the same data set for
+                  different time periods.
+                properties:
+                  $notIn:
+                    type: object
+                    description: >-
+                      The field name and list of values to be compared with
+                      object values.
+                    additionalProperties:
+                      type: array
+                      items:
+                        oneOf:
+                          - type: string
+                          - type: number
+                          - type: boolean
+                example:
+                  $notIn:
+                    country:
+                      - United States
+                      - Canada
+              - title: between
+                type: object
+                description: >-
+                  Field value is within the given range, inclusive.
+
+
+                  For date fields, you can use these macro values that are
+                  relative to the current date or the `asOfDate` in
+                  [`filterParameters`](#filterParameters), if set:
+
+
+                  <table style="border-collapse: collapse; border: none">
+
+                  <tr>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>today</code></liu>
+
+                  <li><code>currentWeek</code></liu>
+
+                  <li><code>currentMonth</code></liu>
+
+                  <li><code>currentQuarter</code></liu>
+
+                  <li><code>currentYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>yesterday</code></liu>
+
+                  <li><code>lastWeek</code></liu>
+
+                  <li><code>priorMonth</code></liu>
+
+                  <li><code>priorQuarter</code></liu>
+
+                  <li><code>priorYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  </tr>
+
+                  </table>
+
+
+                  These are most useful for queries that you want to save and
+                  use repeatedly, such as for views or reports. Just change the
+                  `asOfDate` each time to retrieve the same data set for
+                  different time periods.
+                properties:
+                  $between:
+                    type: object
+                    description: >-
+                      The field name and the beginning and ending values to be
+                      compared with object values.
+                    additionalProperties:
+                      type: array
+                      items:
+                        oneOf:
+                          - type: string
+                          - type: number
+                example:
+                  $between:
+                    totalDue:
+                      - '1'
+                      - '1000'
+              - title: not between
+                type: object
+                description: >-
+                  Field value is not within the given range.
+
+
+                  For date fields, you can use these macro values that are
+                  relative to the current date or the `asOfDate` in
+                  [`filterParameters`](#filterParameters), if set:
+
+
+                  <table style="border-collapse: collapse; border: none">
+
+                  <tr>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>today</code></liu>
+
+                  <li><code>currentWeek</code></liu>
+
+                  <li><code>currentMonth</code></liu>
+
+                  <li><code>currentQuarter</code></liu>
+
+                  <li><code>currentYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  <td style="border: none">
+
+                  <ul>
+
+                  <li><code>yesterday</code></liu>
+
+                  <li><code>lastWeek</code></liu>
+
+                  <li><code>priorMonth</code></liu>
+
+                  <li><code>priorQuarter</code></liu>
+
+                  <li><code>priorYear</code></liu>
+
+                  </ul>
+
+                  </td>
+
+                  </tr>
+
+                  </table>
+
+
+                  These are most useful for queries that you want to save and
+                  use repeatedly, such as for views or reports. Just change the
+                  `asOfDate` each time to retrieve the same data set for
+                  different time periods.
+                properties:
+                  $notBetween:
+                    type: object
+                    description: >-
+                      The field name and the beginning and ending values to be
+                      compared with object values.
+                    additionalProperties:
+                      type: array
+                      items:
+                        oneOf:
+                          - type: string
+                          - type: number
+                example:
+                  $notBetween:
+                    totalDue:
+                      - '100'
+                      - '1000'
+              - title: contains
+                type: object
+                description: >-
+                  Field value contains the given string or number. Cannot be
+                  used with date fields.
+                properties:
+                  $contains:
+                    type: object
+                    description: >-
+                      The field name and value to be compared with object
+                      values.
+                    additionalProperties:
+                      oneOf:
+                        - type: string
+                        - type: number
+                example:
+                  $contains:
+                    name: Acme
+              - title: does not contain
+                type: object
+                description: >-
+                  Field value does not contain the given string or number.
+                  Cannot be used with date fields.
+                properties:
+                  $notContains:
+                    type: object
+                    description: >-
+                      The field name and value to be compared with object
+                      values.
+                    additionalProperties:
+                      oneOf:
+                        - type: string
+                        - type: number
+                example:
+                  $notContains:
+                    name: llc
+              - title: starts with
+                type: object
+                description: >-
+                  Field value starts with this string or number. Cannot be used
+                  with date fields.
+                properties:
+                  $startsWith:
+                    type: object
+                    description: >-
+                      The field name and value to be compared with object
+                      values.
+                    additionalProperties:
+                      oneOf:
+                        - type: string
+                        - type: number
+                example:
+                  $startsWith:
+                    name: A
+              - title: does not start with
+                type: object
+                description: >-
+                  Field value does not start with this string or number. Cannot
+                  be used with date fields.
+                properties:
+                  $notStartsWith:
+                    type: object
+                    description: >-
+                      The field name and value to be compared with object
+                      values.
+                    additionalProperties:
+                      oneOf:
+                        - type: string
+                        - type: number
+                example:
+                  $notStartsWith:
+                    name: Q
+              - title: ends with
+                type: object
+                description: >-
+                  Field value ends with this string or number. Cannot be used
+                  with date fields.
+                properties:
+                  $endsWith:
+                    type: object
+                    description: >-
+                      The field name and value to be compared with object
+                      values.
+                    additionalProperties:
+                      oneOf:
+                        - type: string
+                        - type: number
+                example:
+                  $endsWith:
+                    name: inc
+              - title: does not end with
+                type: object
+                description: >-
+                  Field value does not end with this string or number. Cannot be
+                  used with date fields.
+                properties:
+                  $notEndsWith:
+                    type: object
+                    description: >-
+                      The field name and value to be compared with object
+                      values.
+                    additionalProperties:
+                      oneOf:
+                        - type: string
+                        - type: number
+                example:
+                  $notEndsWith:
+                    name: llc
+        filterExpression:
+          description: >
+            Logical operators to apply when there are multiple filter
+            conditions. The conditions in the `filters` array are implicitly
+            numbered starting at 1. Supports `and`, `or`, and grouping with
+            parentheses.
+
+
+            Shortcuts:
+
+            + `and` by itself means that all conditions must be true.
+
+            + `or` by itself means that at least one condition must be true.
+          type: string
+          example: (1 and 2) or 3
+          default: and
+        filterParameters:
+          description: |-
+            <a name="filterParameters"></a>
+            Pre-defined filter options.
+          type: object
+          properties:
+            asOfDate:
+              type: string
+              format: date
+              description: >-
+                The "as of" date to use with any relative date comparisons in
+                `filters`. For example, if `asOfDate` is set to "2022-04-01"
+                then `priorMonth` will be "03".
+
+
+                The current date is used if `asOfDate` is not set.
+              example: '2022-04-01'
+            includeHierarchyFields:
+              description: >-
+                Set to `true` to include hierarchical structure information with
+                each object in the response.
+              type: boolean
+              example: false
+              default: false
+            caseSensitiveComparison:
+              description: >-
+                Queries are case-sensitive by default. Set to `false` to ignore
+                case in a query.
+              type: boolean
+              example: true
+              default: true
+            includePrivate:
+              description: >-
+                By default, in a multi-entity company queries from the top-level
+                entity do not access data in private entities. Set
+                `includePrivate` to true if you want to query data in private
+                entities.
+              type: boolean
+              default: false
+              example: false
+        orderBy:
+          description: >-
+            Set the order of the results by specifying field names to sort by
+            and whether they should be in ascending or descending order.
+          type: array
+          items:
+            type: object
+            title: field name and sort order
+            additionalProperties:
+              type: string
+              enum:
+                - asc
+                - desc
+          example:
+            - totalDue: asc
+            - lastPaymentMadeDate: desc
+        start:
+          description: First record of the result set to include in the response.
+          type: integer
+          example: 1
+        size:
+          description: Number of records to include in the result set, 4000 maximum.
+          type: integer
+          example: 100
+    core-system-view:
+      type: object
+      description: Filter View.
+      properties:
+        key:
+          type: string
+          description: >-
+            System-assigned unique key for the system view. Used to identify the
+            view in URLs or JSON bodies for all operations on the view.
+          readOnly: true
+        id:
+          type: string
+          description: Unique ID. Same as `key` for this object.
+          readOnly: true
+        name:
+          type: string
+          description: View name.
+        href:
+          type: string
+          description: URL endpoint of the system view.
+          readOnly: true
+        description:
+          type: string
+          description: Description of the system view.
+        object:
+          type: string
+          description: Object that is queried to create the system view.
+        query:
+          type: object
+          description: >-
+            Query parameters that define the fields (columns) returned in the
+            view, the filters that select the objects to return based on field
+            values, and the ordering of the returned objects.
+          allOf:
+            - $ref: '#/components/schemas/core-query'
+            - type: object
+        contexts:
+          type: array
+          description: Contexts
+          items:
+            type: string
+          readOnly: true
+    core-user-viewRequiredProperties:
+      type: object
+      required:
+        - name
+    object-reference:
+      type: object
+      description: Reference to created or updated object
+      properties:
+        key:
+          type: string
+          example: '12345'
+        id:
+          type: string
+          example: ID123
+        href:
+          type: string
+          readOnly: true
+          example: /objects/<application>/<name>/12345
+    status:
+      type: string
+      description: >-
+        Object status. Active objects are fully functional. Inactive objects are
+        essentially hidden and cannot be used or referenced.
+      enum:
+        - active
+        - inactive
+      default: active
+      example: active
+    audit:
+      type: object
+      readOnly: true
+      properties:
+        createdDateTime:
+          description: Date-time when this record was created.
+          type: string
+          format: date-time
+          readOnly: true
+          example: '2023-05-16T15:34:35Z'
+        modifiedDateTime:
+          description: Date-time when this record was modified.
+          type: string
+          format: date-time
+          readOnly: true
+          example: '2024-09-14T21:23:42Z'
+        createdBy:
+          description: Key for the user who created this object.
+          type: string
+          readOnly: true
+          nullable: true
+          example: '436'
+        modifiedBy:
+          description: Key for the user who last modified this object.
+          type: string
+          readOnly: true
+          nullable: true
+          example: '3086'
+    core-user-view:
+      type: object
+      description: Filter View.
+      properties:
+        key:
+          type: string
+          description: >-
+            System-assigned unique key for the user view. Used to identify the
+            view in URLs or JSON bodies for all operations on the view.
+          readOnly: true
+        id:
+          type: string
+          description: Unique ID. Same as `key` for this object.
+          readOnly: true
+        name:
+          type: string
+          description: View name.
+        href:
+          type: string
+          description: URL endpoint of the user view.
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/status'
+        description:
+          type: string
+          description: Description of the view.
+        object:
+          type: string
+          description: Object that is queried to create the system view.
+        category:
+          type: string
+          description: View category.
+          nullable: true
+        viewVersion:
+          type: string
+          description: View Version.
+        isPublic:
+          type: boolean
+          description: >-
+            Set to `true` to share the view with everyone who has access to the
+            object. When set to `false`, the view is private and only visible to
+            the owner.
+        context:
+          type: string
+          description: Context of view.
+        query:
+          type: object
+          description: >-
+            Query parameters that define the fields (columns) returned in the
+            view, the filters that select the objects to return based on field
+            values, and the ordering of the returned objects.
+          allOf:
+            - $ref: '#/components/schemas/core-query'
+            - type: object
+        metadata:
+          type: object
+          description: >-
+            Metadata parameters to control the presentation of the view in the
+            Sage Intacct UI.
+          properties:
+            frozenColumnsCount:
+              type: number
+              description: >-
+                The number of columns that are frozen, based on the order of
+                fields specified in `query`. For example, if
+                `frozenColumnsCount` is 2, the first two columns are frozen.
+            columns:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Column ID.
+                  format:
+                    type: string
+                    description: Column format.
+                    readOnly: true
+                  size:
+                    type: number
+                    description: Column size.
+                    readOnly: true
+        owner:
+          type: object
+          description: The Intacct user who created the view.
+          properties:
+            key:
+              type: string
+              description: User key.
+            id:
+              type: string
+              description: User ID.
+            href:
+              type: string
+              description: URL endpoint of the user.
+              readOnly: true
+        audit:
+          $ref: '#/components/schemas/audit'
+  responses:
+    400error:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error-response'
+  securitySchemes:
+    OAuth2:
+      description: Sage Intacct OAuth 2.0 authorization code flow
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://api.intacct.com/ia/api/v1/oauth2/authorize
+          tokenUrl: https://api.intacct.com/ia/api/v1/oauth2/token
+          refreshUrl: https://api.intacct.com/ia/api/v1/oauth2/token
+          scopes: {}
