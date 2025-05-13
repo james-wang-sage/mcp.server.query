@@ -28,13 +28,6 @@ public class AuthService {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
-    // TODO: Externalize these credentials using Spring configuration properties or environment variables
-    private static final String TOKEN_ENDPOINT = "https://partner.intacct.com/ia3/api/v1-beta2/oauth2/token";
-    private static final String CLIENT_ID = "d4f2b6b318174b9a60a7.INTACCT.app.sage.com"; // Replace if needed
-    private static final String CLIENT_SECRET = "0f4e72b76e88906255c34a800b5e177fce5f1ba9"; // Replace if needed
-    private static final String USERNAME = "Admin@Artur-Test2"; // Replace if needed
-    private static final String PASSWORD = "Aa123456!"; // Replace if needed
-
     // Cache expiration buffer (fetch token slightly before it actually expires)
     private static final Duration EXPIRATION_BUFFER = Duration.ofSeconds(60);
 
@@ -43,6 +36,13 @@ public class AuthService {
 
     // Caffeine cache for access token
     private final Cache<String, TokenCacheValue> tokenCache;
+
+    // Intacct OAuth2 configuration loaded from system properties or application properties
+    private final String tokenEndpoint;
+    private final String clientId;
+    private final String clientSecret;
+    private final String username;
+    private final String password;
 
     // --- DTOs for OAuth2 Token Exchange ---
     private record TokenRequest(
@@ -63,17 +63,33 @@ public class AuthService {
 
     public AuthService(
             @Value("${caffeine.auth.cache.max-size:10}") int maxSize,
-            @Value("${caffeine.auth.cache.ttl-seconds:3300}") int ttlSeconds
+            @Value("${caffeine.auth.cache.ttl-seconds:3300}") int ttlSeconds,
+            @Value("${intacct.token.endpoint:https://partner.intacct.com/ia3/api/v1-beta2/oauth2/token}") String tokenEndpoint,
+            @Value("${intacct.client-id:}") String clientId,
+            @Value("${intacct.client-secret:}") String clientSecret,
+            @Value("${intacct.username:}") String username,
+            @Value("${intacct.password:}") String password
     ) {
         this.tokenClient = RestClient.builder().build();
         this.tokenCache = Caffeine.newBuilder()
                 .maximumSize(maxSize)
                 .expireAfterWrite(Duration.ofSeconds(ttlSeconds))
                 .build();
+        this.tokenEndpoint = tokenEndpoint;
+        this.clientId = clientId;
+        this.clientSecret = clientSecret;
+        this.username = username;
+        this.password = password;
     }
 
     public AuthService() {
-        this(10, 3300); // 默认最大容量10，TTL 3300秒
+        this(10, 3300,
+            System.getProperty("intacct.token.endpoint", "https://partner.intacct.com/ia3/api/v1-beta2/oauth2/token"),
+            System.getProperty("intacct.client-id", ""),
+            System.getProperty("intacct.client-secret", ""),
+            System.getProperty("intacct.username", ""),
+            System.getProperty("intacct.password", "")
+        );
     }
 
     /**
@@ -113,14 +129,14 @@ public class AuthService {
         logger.info("Calling Intacct token endpoint...");
         TokenRequest tokenRequest = new TokenRequest(
                 "password",
-                CLIENT_ID,
-                CLIENT_SECRET,
-                USERNAME,
-                PASSWORD
+                this.clientId,
+                this.clientSecret,
+                this.username,
+                this.password
         );
         try {
             TokenResponse response = this.tokenClient.post()
-                    .uri(TOKEN_ENDPOINT)
+                    .uri(this.tokenEndpoint)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(tokenRequest)
                     .retrieve()
