@@ -27,8 +27,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class QueryService {
 
     private static final Logger logger = LoggerFactory.getLogger(QueryService.class);
-    // TODO: Refactor authentication logic into a shared component
-    private static final String BASE_URL = "https://partner.intacct.com/ia3/api/v1-beta2"; // Base URL from OpenAPI spec
+    // Base URL for Intacct API, should be injected via configuration
+    private static final String BASE_URL = "https://partner.intacct.com/ia3/api/v1-beta2";
 
     private final RestClient restClient;
     private final AuthService authService;

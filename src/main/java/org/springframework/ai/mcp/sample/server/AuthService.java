@@ -38,7 +38,7 @@ public class AuthService {
     private final Cache<String, TokenCacheValue> tokenCache;
 
     // Intacct OAuth2 configuration loaded from system properties or application properties
-    private final String tokenEndpoint;
+    private final String baseUrl;
     private final String clientId;
     private final String clientSecret;
     private final String username;
@@ -64,7 +64,7 @@ public class AuthService {
     public AuthService(
             @Value("${caffeine.auth.cache.max-size:10}") int maxSize,
             @Value("${caffeine.auth.cache.ttl-seconds:3300}") int ttlSeconds,
-            @Value("${intacct.token.endpoint:https://partner.intacct.com/ia3/api/v1-beta2/oauth2/token}") String tokenEndpoint,
+            @Value("${intacct.base-url:https://partner.intacct.com/ia3/api/v1-beta2}") String baseUrl,
             @Value("${intacct.client-id:}") String clientId,
             @Value("${intacct.client-secret:}") String clientSecret,
             @Value("${intacct.username:}") String username,
@@ -75,7 +75,7 @@ public class AuthService {
                 .maximumSize(maxSize)
                 .expireAfterWrite(Duration.ofSeconds(ttlSeconds))
                 .build();
-        this.tokenEndpoint = tokenEndpoint;
+        this.baseUrl = baseUrl;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
         this.username = username;
@@ -84,7 +84,7 @@ public class AuthService {
 
     public AuthService() {
         this(10, 3300,
-            System.getProperty("intacct.token.endpoint", "https://partner.intacct.com/ia3/api/v1-beta2/oauth2/token"),
+            System.getProperty("intacct.base-url", "https://partner.intacct.com/ia3/api/v1-beta2"),
             System.getProperty("intacct.client-id", ""),
             System.getProperty("intacct.client-secret", ""),
             System.getProperty("intacct.username", ""),
@@ -127,6 +127,10 @@ public class AuthService {
      */
     private boolean fetchNewAccessToken() {
         logger.info("Calling Intacct token endpoint...");
+        String tokenEndpoint = System.getProperty("intacct.token.endpoint");
+        if (tokenEndpoint == null || tokenEndpoint.isEmpty()) {
+            tokenEndpoint = this.baseUrl + "/oauth2/token";
+        }
         TokenRequest tokenRequest = new TokenRequest(
                 "password",
                 this.clientId,
@@ -136,7 +140,7 @@ public class AuthService {
         );
         try {
             TokenResponse response = this.tokenClient.post()
-                    .uri(this.tokenEndpoint)
+                    .uri(tokenEndpoint)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(tokenRequest)
                     .retrieve()
