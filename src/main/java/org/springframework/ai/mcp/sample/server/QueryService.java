@@ -278,9 +278,16 @@ public class QueryService {
     ) {
         Objects.requireNonNull(object, "Query object cannot be null");
 
-        // Check if both filters and filterExpression are provided unnecessarily
-        if (filters != null && !filters.isEmpty() && filterExpression != null && !filterExpression.trim().isEmpty()) {
-            throw new IllegalArgumentException("The 'filterExpression' parameter is redundant when 'filters' are provided. Please provide only 'filters'.");
+        // Validate that filterExpression is only used when filters are provided
+        if (filterExpression != null && !filterExpression.trim().isEmpty()
+                && (filters == null || filters.isEmpty())) {
+            throw new IllegalArgumentException(
+                    "The 'filterExpression' parameter requires at least one entry in 'filters'.");
+        }
+
+        // Normalize blank filterExpression to null so the API can apply its default behaviour
+        if (filterExpression != null && filterExpression.trim().isEmpty()) {
+            filterExpression = null;
         }
 
         if (this.currentAccessToken == null) {
@@ -292,7 +299,7 @@ public class QueryService {
                 object,
                 fields,
                 filters,
-                filterExpression, // API defaults to 'and' if null/empty? Check docs. Let's send null if not provided.
+                filterExpression, // API defaults to 'and' when filterExpression is null
                 filterParameters,
                 orderBy,
                 start,
