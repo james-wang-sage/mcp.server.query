@@ -1,6 +1,6 @@
-# Spring AI MCP Weather STDIO Server
+# Spring AI MCP Intacct Query STDIO Server
 
-A Spring Boot starter project demonstrating how to build a Model Context Protocol (MCP) server that provides weather-related tools using the National Weather Service (weather.gov) API. This project showcases the Spring AI MCP Server Boot Starter capabilities with STDIO transport implementation.
+A Spring Boot starter project demonstrating how to build a Model Context Protocol (MCP) server that provides Sage Intacct query and model definition tools using the Intacct Core API. This project showcases the Spring AI MCP Server Boot Starter capabilities with STDIO transport implementation.
 
 For more information, see the [MCP Server Boot Starter](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-server-boot-starter-docs.html) reference documentation.
 
@@ -9,6 +9,8 @@ For more information, see the [MCP Server Boot Starter](https://docs.spring.io/s
 - Java 17 or later
 - Maven 3.6 or later
 - Understanding of Spring Boot and Spring AI concepts
+- Sage Intacct account with API access
+- OAuth2 credentials for Intacct API
 - (Optional) Claude Desktop for AI assistant integration
 
 ## About Spring AI MCP Server Boot Starter
@@ -28,13 +30,19 @@ src/
 │   ├── java/
 │   │   └── org/springframework/ai/mcp/sample/server/
 │   │       ├── McpServerApplication.java    # Main application class with tool registration
-│   │       └── WeatherService.java          # Weather service implementation with MCP tools
+│   │       ├── QueryService.java           # Intacct query service with MCP tools
+│   │       ├── ModelService.java           # Intacct model definition service
+│   │       └── AuthService.java            # OAuth2 authentication service
 │   └── resources/
-│       └── application.properties           # Server and transport configuration
+│       ├── application.properties          # Server and transport configuration
+│       └── common.openapi.yaml            # OpenAPI specification reference
 └── test/
     └── java/
-        └── org/springframework/ai/mcp/sample/client/
-            └── ClientStdio.java             # Test client implementation
+        └── org/springframework/ai/mcp/sample/
+            ├── client/
+            │   └── ClientStdio.java         # Test client implementation
+            └── server/
+                └── ModelServiceTest.java    # Simple test for ModelService
 ```
 
 ## Building and Running
@@ -45,25 +53,51 @@ The server uses STDIO transport mode and is typically started automatically by t
 ./mvnw clean install -DskipTests
 ```
 
+To run standalone for testing:
+
+```bash
+java -Dspring.ai.mcp.server.transport=STDIO \
+     -Dspring.main.web-application-type=none \
+     -Dlogging.pattern.console= \
+     -Dintacct.client-id=YOUR_CLIENT_ID \
+     -Dintacct.client-secret=YOUR_CLIENT_SECRET \
+     -Dintacct.username=YOUR_USERNAME \
+     -Dintacct.password=YOUR_PASSWORD \
+     -jar target/mcp-query-stdio-server-0.1.0.jar
+```
+
 ## Tool Implementation
 
 The project demonstrates how to implement and register MCP tools using Spring's dependency injection and auto-configuration:
 
 ```java
 @Service
-public class WeatherService {
-    @Tool(description = "Get weather forecast for a specific latitude/longitude")
-    public String getWeatherForecastByLocation(
-        double latitude,   // Latitude coordinate
-        double longitude   // Longitude coordinate
+public class QueryService {
+    @Tool(description = "Query data from a Sage Intacct object using filters")
+    public List<Map<String, Object>> executeQuery(
+        String object,           // Object type (e.g., "accounts-payable/vendor")
+        List<String> fields,     // Fields to include
+        List<Map<String, Map<String, Object>>> filters, // Filter conditions
+        String filterExpression, // Logical operators for filters
+        // ... other parameters
+    ) {
+        // Implementation
+    }
+}
+
+@Service
+public class ModelService {
+    @Tool(description = "Get an object model definition")
+    public ObjectModel getModelDefinition(
+        String name,    // Resource name
+        String type,    // Optional resource type
+        // ... other parameters
     ) {
         // Implementation
     }
 
-    @Tool(description = "Get weather alerts for a US state")
-    public String getAlerts(
-        String state  // Two-letter US state code (e.g., CA, NY)
-    ) {
+    @Tool(description = "List all available Intacct resource model summaries")
+    public List<ResourceSummary> listAvailableModels() {
         // Implementation
     }
 }
@@ -71,67 +105,98 @@ public class WeatherService {
 @SpringBootApplication
 public class McpServerApplication {
     @Bean
-    public List<ToolCallback> weatherTools(WeatherService weatherService) {
-        return ToolCallbacks.from(weatherService);
+    public ToolCallbackProvider intacctQueryTools(QueryService queryService) {
+        return MethodToolCallbackProvider.builder().toolObjects(queryService).build();
+    }
+
+    @Bean
+    public ToolCallbackProvider intacctModelTools(ModelService modelService) {
+        return MethodToolCallbackProvider.builder().toolObjects(modelService).build();
     }
 }
 ```
 
-The auto-configuration automatically registers these tools with the MCP server. You can have multiple beans producing lists of ToolCallbacks, and the auto-configuration will merge them.
-
 ## Available Tools
 
-### 1. Weather Forecast Tool
-```java
-@Tool(description = "Get weather forecast for a specific latitude/longitude")
-public String getWeatherForecastByLocation(
-    double latitude,   // Latitude coordinate
-    double longitude   // Longitude coordinate
-) {
-    // Returns detailed forecast including:
-    // - Temperature and unit
-    // - Wind speed and direction
-    // - Detailed forecast description
-}
+### 1. Query Tool (`executeQuery`)
 
-// Example usage:
-CallToolResult forecast = client.callTool(
-    new CallToolRequest("getWeatherForecastByLocation",
-        Map.of(
-            "latitude", 47.6062,    // Seattle coordinates
-            "longitude", -122.3321
-        )
-    )
-);
+Query data from Sage Intacct objects with flexible filtering, field selection, and pagination.
+
+**Parameters:**
+- `object` (required): Object type to query (e.g., `"accounts-payable/vendor"`)
+- `fields` (optional): List of fields to include (e.g., `["id", "name", "status"]`)
+- `filters` (optional): Array of filter conditions using operators like `$eq`, `$gt`, `$contains`, etc.
+- `filterExpression` (optional): Logical combination of filters (e.g., `"1 and 2"`)
+- `orderBy` (optional): Sort order (e.g., `[{"id": "asc"}]`)
+- `start` (optional): Starting record for pagination
+- `size` (optional): Number of records to return
+
+**Example usage:**
+```json
+{
+  "object": "accounts-payable/vendor",
+  "fields": ["id", "name", "status"],
+  "filters": [{"$eq": {"status": "active"}}],
+  "orderBy": [{"id": "asc"}],
+  "size": 10
+}
 ```
 
-### 2. Weather Alerts Tool
-```java
-@Tool(description = "Get weather alerts for a US state")
-public String getAlerts(
-    String state  // Two-letter US state code (e.g., CA, NY)
-) {
-    // Returns active alerts including:
-    // - Event type
-    // - Affected area
-    // - Severity
-    // - Description
-    // - Safety instructions
-}
+**Supported Filter Operators:**
+- `$eq`: Equal to
+- `$ne`: Not equal to
+- `$lt`, `$lte`: Less than (or equal)
+- `$gt`, `$gte`: Greater than (or equal)
+- `$in`, `$notIn`: In/not in list of values
+- `$between`, `$notBetween`: Between two values
+- `$contains`, `$notContains`: Contains substring
+- `$startsWith`, `$endsWith`: String pattern matching
 
-// Example usage:
-CallToolResult alerts = client.callTool(
-    new CallToolRequest("getAlerts",
-        Map.of("state", "NY")
-    )
-);
+### 2. Model Definition Tool (`getModelDefinition`)
+
+Retrieve detailed model definitions for Intacct objects, including field types, relationships, and constraints.
+
+**Parameters:**
+- `name` (required): Resource name (e.g., `"accounts-payable/vendor"`)
+- `type` (optional): Resource type filter (`"object"`, `"service"`)
+- `version` (optional): API version (`"v1"`, `"ALL"`)
+- `schema` (optional): Include full schema (`"true"`/`"false"`)
+- `tags` (optional): Schema formatting (`"true"`/`"false"`)
+
+### 3. List Models Tool (`listAvailableModels`)
+
+Get a summary of all available Intacct resource models.
+
+**Returns:** List of resource summaries with API object names and types.
+
+## Authentication Configuration
+
+The server requires OAuth2 credentials for Intacct API access. Configure through:
+
+### System Properties:
+```bash
+-Dintacct.client-id=your_client_id
+-Dintacct.client-secret=your_client_secret
+-Dintacct.username=your_username
+-Dintacct.password=your_password
+-Dintacct.base-url=https://partner.intacct.com/ia3/api/v1-beta2
 ```
+
+### Application Properties:
+```properties
+intacct.client-id=your_client_id
+intacct.client-secret=your_client_secret
+intacct.username=your_username
+intacct.password=your_password
+intacct.base-url=https://partner.intacct.com/ia3/api/v1-beta2
+```
+
+### Environment Variables:
+Set corresponding environment variables for containerized deployments.
 
 ## Client Integration
 
 ### Java Client Example
-
-#### Create MCP Client Manually
 
 ```java
 // Create server parameters
@@ -139,99 +204,147 @@ ServerParameters stdioParams = ServerParameters.builder("java")
     .args("-Dspring.ai.mcp.server.transport=STDIO",
           "-Dspring.main.web-application-type=none",
           "-Dlogging.pattern.console=",
+          "-Dintacct.client-id=" + clientId,
+          "-Dintacct.client-secret=" + clientSecret,
+          "-Dintacct.username=" + username,
+          "-Dintacct.password=" + password,
           "-jar",
-          "target/mcp-weather-stdio-server-0.0.1-SNAPSHOT.jar")
+          "target/mcp-query-stdio-server-0.1.0.jar")
     .build();
 
 // Initialize transport and client
 var transport = new StdioClientTransport(stdioParams);
 var client = McpClient.sync(transport).build();
-```
 
-The [ClientStdio.java](src/test/java/org/springframework/ai/mcp/sample/client/ClientStdio.java) demonstrates how to implement an MCP client manually.
-
-For a better development experience, consider using the [MCP Client Boot Starters](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-client-boot-starter-docs.html). These starters enable auto-configuration of multiple STDIO and/or SSE connections to MCP servers. See the [starter-default-client](../../client-starter/starter-default-client) and [starter-webflux-client](../../client-starter/starter-webflux-client) projects for examples.
-
-#### Use MCP Client Boot Starter
-
-Use the [starter-default-client](../../client-starter/starter-default-client) to connect to the weather `starter-stdio-server`:
-
-1. Follow the `starter-default-client` readme instructions to build a `mcp-starter-default-client-0.0.1-SNAPSHOT.jar` client application.
-
-2. Run the client using the configuration file:
-
-```bash
-java -Dspring.ai.mcp.client.stdio.connections.server1.command=java \
-     -Dspring.ai.mcp.client.stdio.connections.server1.args=-jar,/Users/christiantzolov/Dev/projects/spring-ai-examples/model-context-protocol/weather/starter-stdio-server/target/mcp-weather-stdio-server-0.0.1-SNAPSHOT.jar \
-     -Dai.user.input='What is the weather in NY?' \
-     -Dlogging.pattern.console= \
-     -jar mcp-starter-default-client-0.0.1-SNAPSHOT.jar
+// Query active vendors
+CallToolResult result = client.callTool(
+    new CallToolRequest("executeQuery",
+        Map.of(
+            "object", "accounts-payable/vendor",
+            "fields", List.of("id", "name", "status"),
+            "filters", List.of(Map.of("$eq", Map.of("status", "active"))),
+            "size", 5
+        )
+    )
+);
 ```
 
 ### Claude Desktop Integration
 
-To integrate with Claude Desktop, add the following configuration to your Claude Desktop settings:
+Add to Claude Desktop configuration:
 
 ```json
 {
   "mcpServers": {
-    "spring-ai-mcp-weather": {
+    "intacct-query": {
       "command": "java",
       "args": [
-        "-Dspring.ai.mcp.server.stdio=true",
+        "-Dspring.ai.mcp.server.transport=STDIO",
         "-Dspring.main.web-application-type=none",
         "-Dlogging.pattern.console=",
+        "-Dintacct.client-id=YOUR_CLIENT_ID",
+        "-Dintacct.client-secret=YOUR_CLIENT_SECRET",
+        "-Dintacct.username=YOUR_USERNAME",
+        "-Dintacct.password=YOUR_PASSWORD",
         "-jar",
-        "/absolute/path/to/mcp-weather-stdio-server-0.0.1-SNAPSHOT.jar"
+        "/absolute/path/to/mcp-query-stdio-server-0.1.0.jar"
       ]
     }
   }
 }
 ```
 
-Replace `/absolute/path/to/` with the actual path to your built jar file.
-
 ## Configuration
 
-### Application Properties
-
-All properties are prefixed with `spring.ai.mcp.server`:
-
+### Required STDIO Configuration
 ```properties
-# Required STDIO Configuration
+# Disable web application and console output for STDIO
 spring.main.web-application-type=none
 spring.main.banner-mode=off
 logging.pattern.console=
 
-# Server Configuration
+# MCP Server Configuration
 spring.ai.mcp.server.enabled=true
-spring.ai.mcp.server.name=my-weather-server
-spring.ai.mcp.server.version=0.0.1
-# SYNC or ASYNC
+spring.ai.mcp.server.name=query-server
+spring.ai.mcp.server.version=0.1.0
 spring.ai.mcp.server.type=SYNC
-spring.ai.mcp.server.resource-change-notification=true
-spring.ai.mcp.server.tool-change-notification=true
-spring.ai.mcp.server.prompt-change-notification=true
-
-# Optional file logging
-logging.file.name=mcp-weather-stdio-server.log
+spring.ai.mcp.server.transport=STDIO
 ```
 
-### Key Configuration Notes
+### Authentication and Caching
+```properties
+# OAuth2 Token Caching (Caffeine)
+caffeine.auth.cache.max-size=10
+caffeine.auth.cache.ttl-seconds=3300
 
-1. **STDIO Mode Requirements**
-   - Disable web application type (`spring.main.web-application-type=none`)
-   - Disable Spring banner (`spring.main.banner-mode=off`)
-   - Clear console logging pattern (`logging.pattern.console=`)
+# File Logging (console disabled for STDIO)
+logging.file.name=./mcp-server-query.log
+logging.level.root=OFF
+```
 
-2. **Server Type**
-   - `SYNC` (default): Uses `McpSyncServer` for straightforward request-response patterns
-   - `ASYNC`: Uses `McpAsyncServer` for non-blocking operations with Project Reactor support
+## Testing
+
+### Unit Testing
+```bash
+# Run all tests
+./mvnw test
+
+# Test ModelService standalone
+./mvnw compile exec:java -Dexec.mainClass="org.springframework.ai.mcp.sample.server.ModelService"
+
+# Test QueryService standalone  
+./mvnw compile exec:java -Dexec.mainClass="org.springframework.ai.mcp.sample.server.QueryService"
+```
+
+### Integration Testing
+Use the provided `ClientStdio.java` for full client-server integration testing.
+
+## API Examples
+
+### Query Vendors by Status
+```json
+{
+  "object": "accounts-payable/vendor",
+  "fields": ["id", "name", "status", "billingType"],
+  "filters": [{"$eq": {"status": "active"}}],
+  "orderBy": [{"name": "asc"}],
+  "size": 20
+}
+```
+
+### Query with Multiple Filters
+```json
+{
+  "object": "accounts-payable/vendor", 
+  "fields": ["id", "name", "totalDue"],
+  "filters": [
+    {"$eq": {"status": "active"}},
+    {"$gt": {"totalDue": 1000}},
+    {"$eq": {"country": "USA"}}
+  ],
+  "filterExpression": "(1 or 2) and 3",
+  "size": 50
+}
+```
+
+### Get Department Model
+```json
+{
+  "name": "company-config/department",
+  "schema": "true"
+}
+```
+
+## Security Notes
+
+- Store API credentials securely (environment variables, secrets management)
+- Access tokens are cached with automatic refresh
+- Use HTTPS endpoints in production
+- Implement proper error handling for authentication failures
 
 ## Additional Resources
 
 - [Spring AI Documentation](https://docs.spring.io/spring-ai/reference/)
 - [MCP Server Boot Starter](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-server-boot-starter-docs.html)
-- [MCP Client Boot Starter](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-server-boot-client-docs.html)
 - [Model Context Protocol Specification](https://modelcontextprotocol.github.io/specification/)
-- [Spring Boot Auto-configuration](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.developing-auto-configuration)
+- [Sage Intacct API Documentation](https://developer.intacct.com/)
