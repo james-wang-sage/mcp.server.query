@@ -11,9 +11,8 @@ mcp:
     tool-change-notification: true
     prompt-change-notification: true
     
-    # Default to STDIO mode for backward compatibility
     stdio:
-      enabled: true
+      enabled: false
       disable-console-logging: true
       disable-banner: true
     
@@ -36,10 +35,23 @@ mcp:
         timeout-seconds: 3600
         max-sessions: 1000
         cleanup-interval-seconds: 300
+      oauth2:
+        client-id: ${OAUTH2_CLIENT_ID:}
+        client-secret: ${OAUTH2_CLIENT_SECRET:}
+        authorization-uri: ${OAUTH2_AUTH_URI:}
+        token-uri: ${OAUTH2_TOKEN_URI:}
+        redirect-uri: ${OAUTH2_REDIRECT_URI:}
+        scopes: []
 
 spring:
   profiles:
     active: stdio  # Default profile
+  main:
+    web-application-type: servlet
+    banner-mode: off
+
+server:
+  port: ${mcp.server.sse.port:8080}
 
 # Caffeine cache configuration for AuthService
 caffeine:
@@ -48,12 +60,16 @@ caffeine:
       max-size: 10
       ttl-seconds: 3300
 
-# Logging configuration (will be overridden by profiles)
+# Logging configuration
 logging:
   file:
     name: ./mcp-server-query.log
   pattern:
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  level:
+    root: INFO
+    org.springframework.ai.mcp.sample.server: DEBUG
 
 ---
 # STDIO Profile Configuration
@@ -63,9 +79,7 @@ spring:
       on-profile: stdio
   main:
     web-application-type: none
-    banner-mode: off
 
-# Disable all console logging for STDIO compatibility
 logging:
   level:
     root: OFF
@@ -87,19 +101,6 @@ spring:
   config:
     activate:
       on-profile: sse
-  main:
-    web-application-type: servlet
-
-server:
-  port: ${mcp.server.sse.port:8080}
-
-# Enable normal logging for SSE mode
-logging:
-  level:
-    root: INFO
-    org.springframework.ai.mcp.sample.server: DEBUG
-  pattern:
-    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 
 mcp:
   server:
@@ -115,7 +116,6 @@ mcp:
         authorization-uri: ${OAUTH2_AUTH_URI:https://partner.intacct.com/ia3/api/v1-beta2/oauth2/authorize}
         token-uri: ${OAUTH2_TOKEN_URI:https://partner.intacct.com/ia3/api/v1-beta2/oauth2/token}
         redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:8080/login/oauth2/code/mcp-client}
-        scopes: []
 
 ---
 # Dual Mode Profile (both STDIO and SSE)
@@ -123,17 +123,8 @@ spring:
   config:
     activate:
       on-profile: dual
-  main:
-    web-application-type: servlet
 
-server:
-  port: ${mcp.server.sse.port:8080}
-
-# Hybrid logging - file only to avoid STDIO interference
 logging:
-  level:
-    root: INFO
-    org.springframework.ai.mcp.sample.server: DEBUG
   pattern:
     console: ""  # No console output for STDIO compatibility
 
@@ -143,15 +134,6 @@ mcp:
       enabled: true
     sse:
       enabled: true
-    auth:
-      mode: OAUTH2
-      oauth2:
-        client-id: ${OAUTH2_CLIENT_ID:}
-        client-secret: ${OAUTH2_CLIENT_SECRET:}
-        authorization-uri: ${OAUTH2_AUTH_URI:}
-        token-uri: ${OAUTH2_TOKEN_URI:}
-        redirect-uri: ${OAUTH2_REDIRECT_URI:}
-        scopes: []
 
 ---
 # Development Profile
@@ -159,20 +141,10 @@ spring:
   config:
     activate:
       on-profile: dev
-  main:
-    web-application-type: servlet
 
-server:
-  port: 8080
-
-# Verbose logging for development
 logging:
   level:
-    root: INFO
-    org.springframework.ai.mcp.sample.server: DEBUG
     org.springframework.web: DEBUG
-  pattern:
-    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 
 mcp:
   server:
