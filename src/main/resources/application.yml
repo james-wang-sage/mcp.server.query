@@ -1,0 +1,186 @@
+# Main MCP Server Configuration
+# This file provides the base configuration for the MCP server
+# Profile-specific configurations override these settings
+
+mcp:
+  server:
+    name: query-server
+    version: 0.1.0
+    type: SYNC
+    resource-change-notification: true
+    tool-change-notification: true
+    prompt-change-notification: true
+    
+    # Default to STDIO mode for backward compatibility
+    stdio:
+      enabled: true
+      disable-console-logging: true
+      disable-banner: true
+    
+    sse:
+      enabled: false
+      port: 8080
+      path: /mcp
+      connection-timeout-seconds: 300
+      max-connections: 100
+      cors:
+        allowed-origins: ["*"]
+        allowed-methods: ["GET", "POST", "OPTIONS"]
+        allowed-headers: ["*"]
+        allow-credentials: true
+        max-age: 3600
+    
+    auth:
+      mode: NONE
+      session:
+        timeout-seconds: 3600
+        max-sessions: 1000
+        cleanup-interval-seconds: 300
+
+spring:
+  profiles:
+    active: stdio  # Default profile
+
+# Caffeine cache configuration for AuthService
+caffeine:
+  auth:
+    cache:
+      max-size: 10
+      ttl-seconds: 3300
+
+# Logging configuration (will be overridden by profiles)
+logging:
+  file:
+    name: ./mcp-server-query.log
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+---
+# STDIO Profile Configuration
+spring:
+  config:
+    activate:
+      on-profile: stdio
+  main:
+    web-application-type: none
+    banner-mode: off
+
+# Disable all console logging for STDIO compatibility
+logging:
+  level:
+    root: OFF
+    org.springframework: OFF
+    org.springframework.ai.mcp.query: OFF
+  pattern:
+    console: ""
+
+mcp:
+  server:
+    stdio:
+      enabled: true
+    sse:
+      enabled: false
+
+---
+# SSE Profile Configuration  
+spring:
+  config:
+    activate:
+      on-profile: sse
+  main:
+    web-application-type: servlet
+
+server:
+  port: ${mcp.server.sse.port:8080}
+
+# Enable normal logging for SSE mode
+logging:
+  level:
+    root: INFO
+    org.springframework.ai.mcp.sample.server: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+mcp:
+  server:
+    stdio:
+      enabled: false
+    sse:
+      enabled: true
+    auth:
+      mode: OAUTH2
+      oauth2:
+        client-id: ${OAUTH2_CLIENT_ID:}
+        client-secret: ${OAUTH2_CLIENT_SECRET:}
+        authorization-uri: ${OAUTH2_AUTH_URI:}
+        token-uri: ${OAUTH2_TOKEN_URI:}
+        redirect-uri: ${OAUTH2_REDIRECT_URI:}
+        scopes: []
+
+---
+# Dual Mode Profile (both STDIO and SSE)
+spring:
+  config:
+    activate:
+      on-profile: dual
+  main:
+    web-application-type: servlet
+
+server:
+  port: ${mcp.server.sse.port:8080}
+
+# Hybrid logging - file only to avoid STDIO interference
+logging:
+  level:
+    root: INFO
+    org.springframework.ai.mcp.sample.server: DEBUG
+  pattern:
+    console: ""  # No console output for STDIO compatibility
+
+mcp:
+  server:
+    stdio:
+      enabled: true
+    sse:
+      enabled: true
+    auth:
+      mode: OAUTH2
+      oauth2:
+        client-id: ${OAUTH2_CLIENT_ID:}
+        client-secret: ${OAUTH2_CLIENT_SECRET:}
+        authorization-uri: ${OAUTH2_AUTH_URI:}
+        token-uri: ${OAUTH2_TOKEN_URI:}
+        redirect-uri: ${OAUTH2_REDIRECT_URI:}
+        scopes: []
+
+---
+# Development Profile
+spring:
+  config:
+    activate:
+      on-profile: dev
+  main:
+    web-application-type: servlet
+
+server:
+  port: 8080
+
+# Verbose logging for development
+logging:
+  level:
+    root: INFO
+    org.springframework.ai.mcp.sample.server: DEBUG
+    org.springframework.web: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+mcp:
+  server:
+    stdio:
+      enabled: false
+    sse:
+      enabled: true
+      cors:
+        allowed-origins: ["http://localhost:3000", "http://localhost:8080"]
+    auth:
+      mode: NONE  # No auth for development
