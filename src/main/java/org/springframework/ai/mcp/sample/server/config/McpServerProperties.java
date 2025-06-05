@@ -339,6 +339,16 @@ public class McpServerProperties {
         private AuthMode mode = AuthMode.NONE;
 
         /**
+         * Username for authentication
+         */
+        private String username;
+
+        /**
+         * Password for authentication
+         */
+        private String password;
+
+        /**
          * OAuth2 configuration
          */
         @NestedConfigurationProperty
@@ -356,6 +366,22 @@ public class McpServerProperties {
 
         public void setMode(AuthMode mode) {
             this.mode = mode;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
         }
 
         public OAuth2Config getOauth2() {

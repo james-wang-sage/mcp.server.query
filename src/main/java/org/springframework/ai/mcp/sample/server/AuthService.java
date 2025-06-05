@@ -6,6 +6,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.mcp.sample.server.config.McpServerProperties;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -49,8 +50,8 @@ public class AuthService {
             @JsonProperty("grant_type") String grantType,
             @JsonProperty("client_id") String clientId,
             @JsonProperty("client_secret") String clientSecret,
-            String username,
-            String password
+            @JsonProperty("username") String username,
+            @JsonProperty("password") String password
     ) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -64,32 +65,44 @@ public class AuthService {
     public AuthService(
             @Value("${caffeine.auth.cache.max-size:10}") int maxSize,
             @Value("${caffeine.auth.cache.ttl-seconds:3300}") int ttlSeconds,
-            @Value("${intacct.base-url:https://partner.intacct.com/ia3/api/v1-beta2}") String baseUrl,
-            @Value("${intacct.client-id:}") String clientId,
-            @Value("${intacct.client-secret:}") String clientSecret,
-            @Value("${intacct.username:}") String username,
-            @Value("${intacct.password:}") String password
+            McpServerProperties properties
     ) {
         this.tokenClient = RestClient.builder().build();
         this.tokenCache = Caffeine.newBuilder()
                 .maximumSize(maxSize)
                 .expireAfterWrite(Duration.ofSeconds(ttlSeconds))
                 .build();
-        this.baseUrl = baseUrl;
-        this.clientId = clientId;
-        this.clientSecret = clientSecret;
-        this.username = username;
-        this.password = password;
+        this.baseUrl = "https://partner.intacct.com/ia3/api/v1-beta2";
+        
+        logger.debug("AuthService constructor called with properties: {}", properties);
+        logger.debug("Properties is null: {}", properties == null);
+        if (properties != null) {
+            logger.debug("Properties.getAuth() is null: {}", properties.getAuth() == null);
+        }
+        
+        logger.debug("System properties - OAUTH2_CLIENT_ID: {}", System.getProperty("OAUTH2_CLIENT_ID"));
+        logger.debug("System properties - OAUTH2_USERNAME: {}", System.getProperty("OAUTH2_USERNAME"));
+        logger.debug("Environment variables - OAUTH2_CLIENT_ID: {}", System.getenv("OAUTH2_CLIENT_ID"));
+        logger.debug("Environment variables - OAUTH2_USERNAME: {}", System.getenv("OAUTH2_USERNAME"));
+        
+        if (properties != null && properties.getAuth() != null) {
+            this.clientId = properties.getAuth().getOauth2().getClientId();
+            this.clientSecret = properties.getAuth().getOauth2().getClientSecret();
+            this.username = properties.getAuth().getUsername();
+            this.password = properties.getAuth().getPassword();
+            logger.debug("Using properties from McpServerProperties: clientId={}, username={}", this.clientId, this.username);
+        } else {
+            this.clientId = System.getProperty("OAUTH2_CLIENT_ID", "");
+            this.clientSecret = System.getProperty("OAUTH2_CLIENT_SECRET", "");
+            this.username = System.getProperty("OAUTH2_USERNAME", "");
+            this.password = System.getProperty("OAUTH2_PASSWORD", "");
+            logger.debug("Using system properties: clientId={}, username={}", this.clientId, this.username);
+        }
+        logger.debug("Final configuration: clientId={}, username={}, baseUrl={}", this.clientId, this.username, this.baseUrl);
     }
 
     public AuthService() {
-        this(10, 3300,
-            System.getProperty("intacct.base-url", "https://partner.intacct.com/ia3/api/v1-beta2"),
-            System.getProperty("intacct.client-id", ""),
-            System.getProperty("intacct.client-secret", ""),
-            System.getProperty("intacct.username", ""),
-            System.getProperty("intacct.password", "")
-        );
+        this(10, 3300, null);
     }
 
     /**
@@ -131,6 +144,10 @@ public class AuthService {
         if (tokenEndpoint == null || tokenEndpoint.isEmpty()) {
             tokenEndpoint = this.baseUrl + "/oauth2/token";
         }
+        
+        logger.debug("Using token endpoint: {}", tokenEndpoint);
+        logger.debug("Using client ID: {}", this.clientId);
+        
         TokenRequest tokenRequest = new TokenRequest(
                 "password",
                 this.clientId,
@@ -138,6 +155,7 @@ public class AuthService {
                 this.username,
                 this.password
         );
+        
         try {
             TokenResponse response = this.tokenClient.post()
                     .uri(tokenEndpoint)
