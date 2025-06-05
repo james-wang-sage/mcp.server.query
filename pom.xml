@@ -113,6 +113,17 @@
                     <mainClass>${start-class}</mainClass>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <classpathScope>test</classpathScope>
+                    <additionalClasspathElements>
+                        <additionalClasspathElement>${project.build.directory}/test-classes</additionalClasspathElement>
+                    </additionalClasspathElements>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 

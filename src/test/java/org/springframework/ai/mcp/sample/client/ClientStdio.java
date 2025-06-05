@@ -15,6 +15,7 @@
 */
 package org.springframework.ai.mcp.sample.client;
 
+import java.util.List;
 import java.util.Map;
 
 import io.modelcontextprotocol.client.McpClient;
@@ -35,29 +36,41 @@ import io.modelcontextprotocol.spec.McpSchema.ListToolsResult;
 public class ClientStdio {
 
 	public static void main(String[] args) {
-
+		// Build server parameters with correct jar path
 		var stdioParams = ServerParameters.builder("java")
 			.args("-jar",
-					"model-context-protocol/weather/starter-stdio-server/target/mcp-weather-stdio-server-0.0.1-SNAPSHOT.jar")
+					"target/mcp-query-stdio-server-0.1.0.jar")
 			.build();
 
 		var transport = new StdioClientTransport(stdioParams);
 		var client = McpClient.sync(transport).build();
 
-		client.initialize();
+		try {
+			// Initialize the client
+			client.initialize();
 
-		// List and demonstrate tools
-		ListToolsResult toolsList = client.listTools();
-		System.out.println("Available Tools = " + toolsList);
+			// List available tools
+			ListToolsResult toolsList = client.listTools();
+			System.out.println("Available Tools = " + toolsList);
 
-		CallToolResult weatherForcastResult = client.callTool(new CallToolRequest("getWeatherForecastByLocation",
-				Map.of("latitude", "47.6062", "longitude", "-122.3321")));
-		System.out.println("Weather Forcast: " + weatherForcastResult);
+			// Test query execution
+			CallToolResult queryResult = client.callTool(new CallToolRequest("executeQuery",
+				Map.of(
+					"object", "accounts-payable/vendor",
+					"fields", List.of("id", "name", "status"),
+					"filters", List.of(Map.of("$eq", Map.of("status", "active"))),
+					"size", 5
+				)
+			));
+			System.out.println("Query Result: " + queryResult);
 
-		CallToolResult alertResult = client.callTool(new CallToolRequest("getAlerts", Map.of("state", "NY")));
-		System.out.println("Alert Response = " + alertResult);
-
-		client.closeGracefully();
+		} catch (Exception e) {
+			System.err.println("Error during test: " + e.getMessage());
+			e.printStackTrace();
+		} finally {
+			// Always close the client gracefully
+			client.closeGracefully();
+		}
 	}
 
 }
