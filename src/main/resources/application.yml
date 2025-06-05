@@ -110,11 +110,11 @@ mcp:
     auth:
       mode: OAUTH2
       oauth2:
-        client-id: ${OAUTH2_CLIENT_ID:}
-        client-secret: ${OAUTH2_CLIENT_SECRET:}
-        authorization-uri: ${OAUTH2_AUTH_URI:}
-        token-uri: ${OAUTH2_TOKEN_URI:}
-        redirect-uri: ${OAUTH2_REDIRECT_URI:}
+        client-id: ${OAUTH2_CLIENT_ID:d4f2b6b318174b9a60a7.INTACCT.app.sage.com}
+        client-secret: ${OAUTH2_CLIENT_SECRET:0f4e72b76e88906255c34a800b5e177fce5f1ba9}
+        authorization-uri: ${OAUTH2_AUTH_URI:https://partner.intacct.com/ia3/api/v1-beta2/oauth2/authorize}
+        token-uri: ${OAUTH2_TOKEN_URI:https://partner.intacct.com/ia3/api/v1-beta2/oauth2/token}
+        redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:8080/login/oauth2/code/mcp-client}
         scopes: []
 
 ---
