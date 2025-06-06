@@ -101,3 +101,5 @@ Correct:
 ```
 13. my email: james.wang@sage.com
 14. `paymentDate` is not a valid field for the `accounts-payable/payment` object even though it shows up in the schema; do NOT use it in the query.
+15. `vendorType` is not a valid field for the `accounts-payable/vendor` object even though it shows up in the schema; do NOT use it in the query.
+16. The fields “id”, “name”, and “status” are the most common for objects; do not include additional fields in the query unless necessary.
