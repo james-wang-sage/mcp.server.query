@@ -1,16 +1,17 @@
 package org.springframework.ai.mcp.sample.server;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.mcp.sample.server.config.McpServerProperties;
-import org.springframework.ai.mcp.sample.server.config.McpTestConfiguration;
 import org.springframework.ai.mcp.sample.server.transport.McpToolIntegration;
 import org.springframework.ai.mcp.sample.server.transport.TransportManager;
 import org.springframework.ai.mcp.sample.server.transport.TransportMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 
 /**
@@ -19,7 +20,6 @@ import org.springframework.test.context.ActiveProfiles;
  */
 @SpringBootTest
 @ActiveProfiles("test") // Use test profile for testing (with mocked auth)
-@Import(McpTestConfiguration.class)
 public class McpServerIntegrationTest {
 
     @Autowired
@@ -30,6 +30,15 @@ public class McpServerIntegrationTest {
 
     @Autowired
     private McpToolIntegration toolIntegration;
+
+    @MockBean
+    private AuthService authService;
+
+    @BeforeEach
+    void setUp() {
+        // Mock the AuthService to return a test token
+        when(authService.getAccessToken()).thenReturn("test-access-token");
+    }
 
     @Test
     public void testServerConfiguration() {
