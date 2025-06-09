@@ -4,11 +4,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.mcp.sample.server.config.McpServerProperties;
+import org.springframework.ai.mcp.sample.server.config.McpTestConfiguration;
 import org.springframework.ai.mcp.sample.server.transport.McpToolIntegration;
 import org.springframework.ai.mcp.sample.server.transport.TransportManager;
 import org.springframework.ai.mcp.sample.server.transport.TransportMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 /**
@@ -16,7 +18,8 @@ import org.springframework.test.context.ActiveProfiles;
  * Tests the interaction between all components in different modes.
  */
 @SpringBootTest
-@ActiveProfiles("dev") // Use dev profile for testing
+@ActiveProfiles("test") // Use test profile for testing (with mocked auth)
+@Import(McpTestConfiguration.class)
 public class McpServerIntegrationTest {
 
     @Autowired

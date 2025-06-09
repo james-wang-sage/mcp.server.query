@@ -1,0 +1,69 @@
+# Test configuration for test profile
+spring:
+  main:
+    web-application-type: servlet
+    banner-mode: off
+  
+  # Enable web environment for testing
+  web:
+    resources:
+      add-mappings: false
+
+# MCP Server Configuration for testing
+mcp:
+  server:
+    name: query-server
+    version: 0.1.0
+    type: SYNC
+    
+    stdio:
+      enabled: false
+      disable-console-logging: true
+      disable-banner: true
+    
+    sse:
+      enabled: true
+      port: 8080
+      path: /mcp
+      connection-timeout-seconds: 300
+      max-connections: 100
+      cors:
+        allowed-origins: ["*"]
+        allowed-methods: ["GET", "POST", "OPTIONS"]
+        allowed-headers: ["*"]
+        allow-credentials: true
+        max-age: 3600
+    
+    auth:
+      mode: NONE  # No authentication for testing
+      session:
+        timeout-seconds: 3600
+        max-sessions: 1000
+        cleanup-interval-seconds: 300
+
+# Server configuration
+server:
+  port: 8080
+
+# Logging configuration for tests
+logging:
+  level:
+    root: WARN
+    org.springframework.ai.mcp.sample.server: INFO
+    org.springframework.web: WARN
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# Caffeine cache configuration for AuthService
+caffeine:
+  auth:
+    cache:
+      max-size: 10
+      ttl-seconds: 3300
+
+# Mock OAuth2 credentials for testing (to prevent authentication errors)
+oauth2:
+  client-id: test-client-id
+  client-secret: test-client-secret
+  username: test-username
+  password: test-password

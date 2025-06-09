@@ -1,30 +1,29 @@
 package org.springframework.ai.mcp.sample.server.transport;
 
 import static org.junit.jupiter.api.Assertions.*;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-
-import org.springframework.ai.mcp.sample.server.config.McpServerProperties;
-import org.springframework.ai.mcp.sample.server.security.SecurityContext;
-import org.springframework.ai.mcp.sample.server.AuthService;
-import org.springframework.ai.mcp.sample.server.transport.McpToolIntegration;
-
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
-import java.util.Map;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.ai.mcp.sample.server.AuthService;
+import org.springframework.ai.mcp.sample.server.config.McpServerProperties;
+import org.springframework.ai.mcp.sample.server.config.McpTestConfiguration;
+import org.springframework.ai.mcp.sample.server.security.SecurityContext;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
 /**
  * Unit tests for SSE Controller functionality.
  * Tests the controller logic without full Spring context.
  */
 @SpringBootTest
-@ActiveProfiles("dev") // Use dev profile for testing (no auth)
+@ActiveProfiles("test") // Use test profile for testing (with mocked auth)
+@Import(McpTestConfiguration.class)
 public class SseControllerTest {
 
     private SseController sseController;

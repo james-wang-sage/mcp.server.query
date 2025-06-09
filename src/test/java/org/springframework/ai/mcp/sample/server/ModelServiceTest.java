@@ -5,8 +5,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.mcp.sample.server.config.McpTestConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 /**
@@ -14,7 +16,8 @@ import org.springframework.test.context.ActiveProfiles;
  * Tests the model listing and management capabilities.
  */
 @SpringBootTest
-@ActiveProfiles("dev") // Use dev profile for testing
+@ActiveProfiles("test") // Use test profile for testing (with mocked auth)
+@Import(McpTestConfiguration.class)
 public class ModelServiceTest {
 
     @Autowired
