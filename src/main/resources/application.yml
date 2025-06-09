@@ -1,0 +1,171 @@
+# Main MCP Server Configuration
+# This file provides the base configuration for the MCP server
+# Profile-specific configurations override these settings
+
+mcp:
+  server:
+    name: query-server
+    version: 0.1.0
+    type: SYNC
+    resource-change-notification: true
+    tool-change-notification: true
+    prompt-change-notification: true
+    
+    stdio:
+      enabled: false
+      disable-console-logging: true
+      disable-banner: true
+    
+    sse:
+      enabled: false
+      port: 8080
+      path: /mcp
+      connection-timeout-seconds: 300
+      max-connections: 100
+      cors:
+        allowed-origins: ["*"]
+        allowed-methods: ["GET", "POST", "OPTIONS"]
+        allowed-headers: ["*"]
+        allow-credentials: true
+        max-age: 3600
+    
+    auth:
+      mode: NONE
+      session:
+        timeout-seconds: 3600
+        max-sessions: 1000
+        cleanup-interval-seconds: 300
+      username: ${OAUTH2_USERNAME:admin@oauth2_main2}
+      password: ${OAUTH2_PASSWORD:Aa123456!}
+      oauth2:
+        client-id: ${OAUTH2_CLIENT_ID:d4f2b6b318174b9a60a7.INTACCT.app.sage.com}
+        client-secret: ${OAUTH2_CLIENT_SECRET:0f4e72b76e88906255c34a800b5e177fce5f1ba9}
+        authorization-uri: ${OAUTH2_AUTH_URI:https://partner.intacct.com/ia3/api/v1-beta2/oauth2/authorize}
+        token-uri: ${OAUTH2_TOKEN_URI:https://partner.intacct.com/ia3/api/v1-beta2/oauth2/token}
+        redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:8080/login/oauth2/code/mcp-client}
+
+spring:
+  profiles:
+    active: stdio  # Default profile
+  main:
+    web-application-type: servlet
+    banner-mode: off
+
+server:
+  port: ${mcp.server.sse.port:8080}
+
+# Caffeine cache configuration for AuthService
+caffeine:
+  auth:
+    cache:
+      max-size: 10
+      ttl-seconds: 3300
+
+# Logging configuration
+logging:
+  file:
+    name: ./mcp-server-query.log
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  level:
+    root: INFO
+    org.springframework.ai.mcp.sample.server: DEBUG
+
+---
+# STDIO Profile Configuration
+spring:
+  config:
+    activate:
+      on-profile: stdio
+  main:
+    web-application-type: none
+
+logging:
+  level:
+    root: OFF
+    org.springframework: OFF
+    org.springframework.ai.mcp.query: OFF
+  pattern:
+    console: ""
+
+mcp:
+  server:
+    stdio:
+      enabled: true
+    sse:
+      enabled: false
+    auth:
+      mode: OAUTH2
+      username: ${OAUTH2_USERNAME:admin@oauth2_main2}
+      password: ${OAUTH2_PASSWORD:Aa123456!}
+      oauth2:
+        client-id: ${OAUTH2_CLIENT_ID:d4f2b6b318174b9a60a7.INTACCT.app.sage.com}
+        client-secret: ${OAUTH2_CLIENT_SECRET:0f4e72b76e88906255c34a800b5e177fce5f1ba9}
+        authorization-uri: ${OAUTH2_AUTH_URI:https://partner.intacct.com/ia3/api/v1-beta2/oauth2/authorize}
+        token-uri: ${OAUTH2_TOKEN_URI:https://partner.intacct.com/ia3/api/v1-beta2/oauth2/token}
+        redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:8080/login/oauth2/code/mcp-client}
+
+---
+# SSE Profile Configuration  
+spring:
+  config:
+    activate:
+      on-profile: sse
+
+mcp:
+  server:
+    stdio:
+      enabled: false
+    sse:
+      enabled: true
+    auth:
+      mode: OAUTH2
+      username: ${OAUTH2_USERNAME:admin@oauth2_main2}
+      password: ${OAUTH2_PASSWORD:Aa123456!}
+      oauth2:
+        client-id: ${OAUTH2_CLIENT_ID:d4f2b6b318174b9a60a7.INTACCT.app.sage.com}
+        client-secret: ${OAUTH2_CLIENT_SECRET:0f4e72b76e88906255c34a800b5e177fce5f1ba9}
+        authorization-uri: ${OAUTH2_AUTH_URI:https://partner.intacct.com/ia3/api/v1-beta2/oauth2/authorize}
+        token-uri: ${OAUTH2_TOKEN_URI:https://partner.intacct.com/ia3/api/v1-beta2/oauth2/token}
+        redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:8080/login/oauth2/code/mcp-client}
+
+---
+# Dual Mode Profile (both STDIO and SSE)
+spring:
+  config:
+    activate:
+      on-profile: dual
+
+logging:
+  pattern:
+    console: ""  # No console output for STDIO compatibility
+
+mcp:
+  server:
+    stdio:
+      enabled: true
+    sse:
+      enabled: true
+
+---
+# Development Profile
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+logging:
+  level:
+    org.springframework.web: DEBUG
+
+mcp:
+  server:
+    stdio:
+      enabled: false
+    sse:
+      enabled: true
+      cors:
+        allowed-origins: ["http://localhost:3000", "http://localhost:8080"]
+    auth:
+      mode: NONE  # No auth for development
