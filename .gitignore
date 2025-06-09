@@ -8,6 +8,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 dev-debug.log
+mcp-server-query.log.*
 
 # Dependency directories
 node_modules/
