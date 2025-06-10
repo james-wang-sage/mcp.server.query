@@ -1,0 +1,10 @@
+{
+    "snapshot": "POPULATED_FROM_SETTINGS",
+    "install": "npm install",
+    "terminals": [
+        {
+            "name": "Run Spring Boot",
+            "command": "mvn spring-boot:run"
+        }
+    ]
+}

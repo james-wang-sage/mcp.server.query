@@ -33,7 +33,6 @@ tasks.json
 tasks/ 
 
 # AI tool configuration files
-.cursor/
 .roo/
 .roomodes/
 .taskmasterconfig
