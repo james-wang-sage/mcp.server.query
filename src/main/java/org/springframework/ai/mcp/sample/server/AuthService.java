@@ -85,8 +85,8 @@ public class AuthService {
             if (baseUrlProperty == null || baseUrlProperty.isEmpty()) {
                 // Updated default URL - partner.intacct.com was deprecated on June 13, 2025
                 // Users should specify the correct new partner environment URL
-                this.baseUrl = "https://api.intacct.com/ia/api/v1-beta2"; // Updated default
-                logger.warn("Using default API URL. Please update to use the correct new partner environment URL.");
+                this.baseUrl = "https://api-partner-main.intacct.com/ia/api/v1-beta2"; // Updated default
+                logger.warn("Using default API URL (api-partner-main.intacct.com). This is the current recommended URL. If you need to use a different partner environment, please configure it explicitly.");
             } else {
                 this.baseUrl = baseUrlProperty;
             }

@@ -3,7 +3,7 @@
 ## 🚨 Urgent: Partner Environment Deprecation
 
 **Effective Date:** June 13, 2025  
-**Impact:** All applications using `partner.intacct.com` must migrate to new partner environments
+**Impact:** All applications using `partner.intacct.com` must migrate to `api-partner-main.intacct.com`
 
 ## What Changed
 
@@ -37,7 +37,7 @@ https://p303.intacct.com/ia/api/v1-beta2
 -Dintacct.base.url=https://partner.intacct.com/ia/api/v1-beta2
 
 # NEW (replace with your assigned environment)
--Dintacct.base.url=https://p301.intacct.com/ia/api/v1-beta2
+-Dintacct.base.url=https://api-partner-main.intacct.com/ia/api/v1-beta2
 ```
 
 ### 2. Update Claude Desktop Configuration
@@ -135,10 +135,10 @@ If you encounter issues during migration:
 
 ## Timeline
 
-- **June 13, 2025**: Legacy `partner.intacct.com` deprecated
+- **June 13, 2025**: Legacy `partner.intacct.com` deprecated, migrate to `api-partner-main.intacct.com`
 - **Immediate Action Required**: Migrate to new environment URLs
 - **No Grace Period**: Applications must be updated immediately
 
 ---
 
-**Remember:** Replace `YOUR-NEW-ENV` with your actual assigned partner environment URL (e.g., `p301`, `p302`, etc.)
+**Remember:** Replace `YOUR-NEW-ENV` with your actual assigned partner environment URL (e.g., `p301`, `

@@ -1,11 +1,11 @@
 package org.springframework.ai.mcp.sample.server;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.mcp.sample.server.config.McpServerProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test to ensure all services use the same base URL configuration
@@ -89,7 +89,7 @@ public class ServiceUrlConsistencyTest {
         ModelService modelService = new ModelService(authService);
 
         // Verify default URL is used (updated for environment migration)
-        assertEquals("https://api.intacct.com/ia/api/v1-beta2", authService.getBaseUrl());
+        assertEquals("https://api-partner-main.intacct.com/ia/api/v1-beta2", authService.getBaseUrl());
 
         // All services should be created successfully
         assertNotNull(authService);

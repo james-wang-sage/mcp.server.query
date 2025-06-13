@@ -9,7 +9,7 @@ A Spring Boot starter project demonstrating how to build a Model Context Protoco
 **Action Required:**
 - Update your configuration to use the new partner environment URLs
 - Contact your Sage Intacct administrator for your new partner environment URL
-- Replace all instances of `partner.intacct.com` with your assigned new environment
+- Replace all instances of `partner.intacct.com` with `api-partner-main.intacct.com`
 
 **Example Migration:**
 ```bash
@@ -17,7 +17,7 @@ A Spring Boot starter project demonstrating how to build a Model Context Protoco
 -Dintacct.base.url=https://partner.intacct.com/ia/api/v1-beta2
 
 # NEW (update with your assigned environment)
--Dintacct.base.url=https://your-new-partner-env.intacct.com/ia/api/v1-beta2
+-Dintacct.base.url=https://api-partner-main.intacct.com/ia/api/v1-beta2
 ```
 
 For more information, see the [MCP Server Boot Starter](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-server-boot-starter-docs.html) reference documentation.
@@ -200,17 +200,17 @@ The server requires OAuth2 credentials for Intacct API access. Configure through
 -Dintacct.password=your_password
 
 # API endpoints (all configurable) - UPDATE TO YOUR NEW ENVIRONMENT
--Dintacct.base.url=https://your-new-partner-env.intacct.com/ia/api/v1-beta2
--Dintacct.token.endpoint=https://your-new-partner-env.intacct.com/ia/api/v1-beta2/oauth2/token
+-Dintacct.base.url=https://api-partner-main.intacct.com/ia/api/v1-beta2
+-Dintacct.token.endpoint=https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token
 
 # Alternative environment variables
 -DOAUTH2_CLIENT_ID=your_client_id
 -DOAUTH2_CLIENT_SECRET=your_client_secret
 -DOAUTH2_USERNAME=your_username
 -DOAUTH2_PASSWORD=your_password
--DINTACCT_BASE_URL=https://partner.intacct.com/ia/api/v1-beta2
--DOAUTH2_AUTH_URI=https://partner.intacct.com/ia/api/v1-beta2/oauth2/authorize
--DOAUTH2_TOKEN_URI=https://partner.intacct.com/ia/api/v1-beta2/oauth2/token
+-DINTACCT_BASE_URL=https://api-partner-main.intacct.com/ia/api/v1-beta2
+-DOAUTH2_AUTH_URI=https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/authorize
+-DOAUTH2_TOKEN_URI=https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token
 -DOAUTH2_REDIRECT_URI=http://localhost:8080/login/oauth2/code/mcp-client
 ```
 
@@ -223,15 +223,15 @@ intacct.username=your_username
 intacct.password=your_password
 
 # API endpoints (all configurable)
-intacct.base.url=https://partner.intacct.com/ia/api/v1-beta2
-intacct.token.endpoint=https://partner.intacct.com/ia/api/v1-beta2/oauth2/token
+intacct.base.url=https://api-partner-main.intacct.com/ia/api/v1-beta2
+intacct.token.endpoint=https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token
 
 # MCP Server configuration (via application.yml)
-mcp.server.auth.base-url=https://partner.intacct.com/ia/api/v1-beta2
+mcp.server.auth.base-url=https://api-partner-main.intacct.com/ia/api/v1-beta2
 mcp.server.auth.oauth2.client-id=your_client_id
 mcp.server.auth.oauth2.client-secret=your_client_secret
-mcp.server.auth.oauth2.authorization-uri=https://partner.intacct.com/ia/api/v1-beta2/oauth2/authorize
-mcp.server.auth.oauth2.token-uri=https://partner.intacct.com/ia/api/v1-beta2/oauth2/token
+mcp.server.auth.oauth2.authorization-uri=https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/authorize
+mcp.server.auth.oauth2.token-uri=https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token
 mcp.server.auth.oauth2.redirect-uri=http://localhost:8080/login/oauth2/code/mcp-client
 ```
 
@@ -290,8 +290,8 @@ Add to Claude Desktop configuration:
         "-Dintacct.client-secret=YOUR_CLIENT_SECRET",
         "-Dintacct.username=YOUR_USERNAME",
         "-Dintacct.password=YOUR_PASSWORD",
-        "-Dintacct.base.url=https://partner.intacct.com/ia/api/v1-beta2",
-        "-Dintacct.token.endpoint=https://partner.intacct.com/ia/api/v1-beta2/oauth2/token",
+        "-Dintacct.base.url=https://api-partner-main.intacct.com/ia/api/v1-beta2",
+        "-Dintacct.token.endpoint=https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token",
         "-jar",
         "/absolute/path/to/mcp-query-stdio-server-0.1.0.jar"
       ]

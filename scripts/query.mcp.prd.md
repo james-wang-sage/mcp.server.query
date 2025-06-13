@@ -15,9 +15,9 @@ Query MCP Server is a Model Context Protocol (MCP)–compliant server that sits 
 | MCP Protocol Compliance          | Implements MCP server endpoints and message formats over stdio and SSE               | Ensures any MCP client can connect without custom protocol work        | Spring Boot + custom stdin/stdout & SSE handlers                              |
 | NL-to-Query-API Translation       | Transforms user prompts into Sage Intacct Query API payloads                          | Allows non-technical users to fetch Intacct data with natural language | Spring AI prompts → JSON conforming to Query API schema                       |
 | OAuth2 Authentication            | Accepts user & company credentials, obtains and refreshes access tokens               | Secures calls to Intacct and isolates each user/company context         | Spring Security OAuth2 client, token store, request interceptors              |
-| Intacct REST Client              | Sends authenticated REST requests to `partner.intacct.com/query` and parses responses | Centralizes API integration logic and error handling                   | Spring WebClient with custom codecs                                           |
+| Intacct REST Client              | Sends authenticated REST requests to `api-partner-main.intacct.com/query` and parses responses | Centralizes API integration logic and error handling                   | Spring WebClient with custom codecs                                           |
 | Error Handling & Logging         | Catches translation, auth, or API errors and returns structured MCP error messages   | Ensures clients receive clear diagnostics and logs for troubleshooting | Global exception handlers, SLF4J + Logback, standardized JSON error schema    |
-| Packaging & Deployment           | Packaged as a standalone “fat” JAR for Java CLI                                      | Simplifies distribution and execution                                  | Spring Boot Maven plugin                                                      |
+| Packaging & Deployment           | Packaged as a standalone "fat" JAR for Java CLI                                      | Simplifies distribution and execution                                  | Spring Boot Maven plugin                                                      |
 
 # User Experience  
 **User Personas**  
@@ -26,7 +26,7 @@ Query MCP Server is a Model Context Protocol (MCP)–compliant server that sits 
 
 **Key User Flows**  
 1. Client runs `java -jar query-mcp-server.jar` and opens MCP channel (stdio or SSE).  
-2. Copilot sends an MCP “invoke” request with a natural-language query.  
+2. Copilot sends an MCP "invoke" request with a natural-language query.  
 3. Server authenticates via OAuth2, translates the prompt, calls Intacct, and streams results back over MCP.  
 4. Client renders results or handles errors.  
 
@@ -50,11 +50,11 @@ Query MCP Server is a Model Context Protocol (MCP)–compliant server that sits 
 
 **APIs & Integrations**  
 -  Inbound: MCP endpoints over stdin/stdout and SSE  
--  Outbound: HTTPS POST to `https://partner.intacct.com/query` with OAuth2 Bearer token  
+-  Outbound: HTTPS POST to `https://api-partner-main.intacct.com/query` with OAuth2 Bearer token  
 
 **Infrastructure Requirements**  
 -  Java 17+ runtime  
--  Standalone “fat” JAR (no external containers)  
+-  Standalone "fat" JAR (no external containers)  
 -  Optional: Redirect stdout/stderr to file or pipeline for logging  
 
 # Development Roadmap  
