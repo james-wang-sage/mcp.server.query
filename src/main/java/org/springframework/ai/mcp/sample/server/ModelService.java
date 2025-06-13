@@ -171,6 +171,15 @@ public class ModelService {
     ) {
         Objects.requireNonNull(name, "Resource name cannot be null");
 
+        // Fix common mistake: remove "objects/" prefix if present
+        final String resourceName;
+        if (name.startsWith("objects/")) {
+            resourceName = name.substring("objects/".length());
+            logger.debug("Removed 'objects/' prefix from resource name. Using: {}", resourceName);
+        } else {
+            resourceName = name;
+        }
+
         // Check if RestClient was initialized properly (access token obtained)
         if (this.currentAccessToken == null) {
              logger.error("Cannot get model definition: Access token was not obtained during initialization.");
@@ -179,12 +188,12 @@ public class ModelService {
 
         // Use UriBuilder within the RestClient call to correctly combine with base URL
         logger.info("Requesting model definition for name: {}, type: {}, version: {}, schema: {}, tags: {}",
-                name, type, version, schema, tags);
+                resourceName, type, version, schema, tags);
 
         try {
             ModelApiResponse response = restClient.get()
                     .uri(builder -> {
-                        builder = builder.path("/services/core/model").queryParam("name", name);
+                        builder = builder.path("/services/core/model").queryParam("name", resourceName);
                         // Add optional parameters if they are provided
                         if (type != null && !type.isEmpty()) {
                             builder.queryParam("type", type);
@@ -206,14 +215,14 @@ public class ModelService {
                     .body(ModelApiResponse.class);
 
             if (response != null) {
-                 logger.debug("Successfully retrieved model definition for '{}'", name);
+                 logger.debug("Successfully retrieved model definition for '{}'", resourceName);
                  return response.result();
             } else {
-                 logger.warn("Received null response for model definition request: {}", name);
+                 logger.warn("Received null response for model definition request: {}", resourceName);
                  return null;
             }
         } catch (RestClientException e) {
-            logger.error("Error retrieving model definition for '{}': {}", name, e.getMessage(), e);
+            logger.error("Error retrieving model definition for '{}': {}", resourceName, e.getMessage(), e);
             // Consider throwing a custom exception or returning a specific error object
             // TODO: Handle potential 401 Unauthorized if token expires
             return null;

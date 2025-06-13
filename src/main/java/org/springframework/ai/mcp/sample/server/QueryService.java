@@ -281,6 +281,12 @@ public class QueryService {
     ) {
         Objects.requireNonNull(object, "Query object cannot be null");
 
+        // Fix common mistake: remove "objects/" prefix if present
+        if (object.startsWith("objects/")) {
+            object = object.substring("objects/".length());
+            logger.debug("Removed 'objects/' prefix from object name. Using: {}", object);
+        }
+
         // Validate that filterExpression is only used when filters are provided
         if (filterExpression != null && !filterExpression.trim().isEmpty()
                 && (filters == null || filters.isEmpty())) {
