@@ -175,20 +175,46 @@ The server requires OAuth2 credentials for Intacct API access. Configure through
 
 ### System Properties:
 ```bash
+# Core authentication
 -Dintacct.client-id=your_client_id
 -Dintacct.client-secret=your_client_secret
 -Dintacct.username=your_username
 -Dintacct.password=your_password
--Dintacct.base-url=https://partner.intacct.com/ia3/api/v1-beta2
+
+# API endpoints (all configurable)
+-Dintacct.base.url=https://partner.intacct.com/ia/api/v1-beta2
+-Dintacct.token.endpoint=https://partner.intacct.com/ia/api/v1-beta2/oauth2/token
+
+# Alternative environment variables
+-DOAUTH2_CLIENT_ID=your_client_id
+-DOAUTH2_CLIENT_SECRET=your_client_secret
+-DOAUTH2_USERNAME=your_username
+-DOAUTH2_PASSWORD=your_password
+-DINTACCT_BASE_URL=https://partner.intacct.com/ia/api/v1-beta2
+-DOAUTH2_AUTH_URI=https://partner.intacct.com/ia/api/v1-beta2/oauth2/authorize
+-DOAUTH2_TOKEN_URI=https://partner.intacct.com/ia/api/v1-beta2/oauth2/token
+-DOAUTH2_REDIRECT_URI=http://localhost:8080/login/oauth2/code/mcp-client
 ```
 
 ### Application Properties:
 ```properties
+# Core authentication
 intacct.client-id=your_client_id
 intacct.client-secret=your_client_secret
 intacct.username=your_username
 intacct.password=your_password
-intacct.base-url=https://partner.intacct.com/ia3/api/v1-beta2
+
+# API endpoints (all configurable)
+intacct.base.url=https://partner.intacct.com/ia/api/v1-beta2
+intacct.token.endpoint=https://partner.intacct.com/ia/api/v1-beta2/oauth2/token
+
+# MCP Server configuration (via application.yml)
+mcp.server.auth.base-url=https://partner.intacct.com/ia/api/v1-beta2
+mcp.server.auth.oauth2.client-id=your_client_id
+mcp.server.auth.oauth2.client-secret=your_client_secret
+mcp.server.auth.oauth2.authorization-uri=https://partner.intacct.com/ia/api/v1-beta2/oauth2/authorize
+mcp.server.auth.oauth2.token-uri=https://partner.intacct.com/ia/api/v1-beta2/oauth2/token
+mcp.server.auth.oauth2.redirect-uri=http://localhost:8080/login/oauth2/code/mcp-client
 ```
 
 ### Environment Variables:
@@ -246,6 +272,8 @@ Add to Claude Desktop configuration:
         "-Dintacct.client-secret=YOUR_CLIENT_SECRET",
         "-Dintacct.username=YOUR_USERNAME",
         "-Dintacct.password=YOUR_PASSWORD",
+        "-Dintacct.base.url=https://partner.intacct.com/ia/api/v1-beta2",
+        "-Dintacct.token.endpoint=https://partner.intacct.com/ia/api/v1-beta2/oauth2/token",
         "-jar",
         "/absolute/path/to/mcp-query-stdio-server-0.1.0.jar"
       ]

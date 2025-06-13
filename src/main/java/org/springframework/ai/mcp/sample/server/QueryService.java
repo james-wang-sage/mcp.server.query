@@ -27,17 +27,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class QueryService {
 
     private static final Logger logger = LoggerFactory.getLogger(QueryService.class);
-    // Base URL for Intacct API, should be injected via configuration
-    private static final String BASE_URL = "https://partner.intacct.com/ia3/api/v1-beta2";
 
     private final RestClient restClient;
     private final AuthService authService;
     private String currentAccessToken; // Store the token used by this instance's RestClient
+    private final String baseUrl; // Store the base URL for this instance
 
     @Autowired
     public QueryService(AuthService authService) {
         this.authService = authService;
         this.currentAccessToken = this.authService.getAccessToken();
+
+        // Get base URL from system property, fallback to default
+        String baseUrlProperty = System.getProperty("intacct.base.url");
+        if (baseUrlProperty == null || baseUrlProperty.isEmpty()) {
+            this.baseUrl = "https://partner.intacct.com/ia/api/v1-beta2";
+        } else {
+            this.baseUrl = baseUrlProperty;
+        }
 
         if (this.currentAccessToken == null) {
             logger.error("Failed to obtain access token during initialization. QueryService may not function correctly.");
@@ -47,7 +54,7 @@ public class QueryService {
 
         // Configure RestClient with base URL and Authorization header
         this.restClient = RestClient.builder()
-                .baseUrl(BASE_URL)
+                .baseUrl(this.baseUrl)
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + this.currentAccessToken)
                 .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                 .build();

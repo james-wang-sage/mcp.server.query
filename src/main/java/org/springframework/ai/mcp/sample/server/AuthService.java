@@ -72,7 +72,18 @@ public class AuthService {
                 .maximumSize(maxSize)
                 .expireAfterWrite(Duration.ofSeconds(ttlSeconds))
                 .build();
-        this.baseUrl = "https://partner.intacct.com/ia3/api/v1-beta2";
+
+        // Get base URL from properties, then system property, then fallback to default
+        if (properties != null && properties.getAuth() != null && properties.getAuth().getBaseUrl() != null && !properties.getAuth().getBaseUrl().isEmpty()) {
+            this.baseUrl = properties.getAuth().getBaseUrl();
+        } else {
+            String baseUrlProperty = System.getProperty("intacct.base.url");
+            if (baseUrlProperty == null || baseUrlProperty.isEmpty()) {
+                this.baseUrl = "https://partner.intacct.com/ia/api/v1-beta2";
+            } else {
+                this.baseUrl = baseUrlProperty;
+            }
+        }
         
         logger.debug("AuthService constructor called with properties: {}", properties);
         logger.debug("Properties is null: {}", properties == null);

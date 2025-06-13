@@ -27,15 +27,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class ModelService {
 
     private static final Logger logger = LoggerFactory.getLogger(ModelService.class);
-    private static final String BASE_URL = "https://partner.intacct.com/ia3/api/v1-beta2"; // Base URL from OpenAPI spec
+
     private final RestClient restClient;
     private final AuthService authService;
     private String currentAccessToken; // Store the token used by this instance's RestClient
+    private final String baseUrl; // Store the base URL for this instance
 
     @Autowired
     public ModelService(AuthService authService) {
         this.authService = authService;
         this.currentAccessToken = this.authService.getAccessToken();
+
+        // Get base URL from system property, fallback to default
+        String baseUrlProperty = System.getProperty("intacct.base.url");
+        if (baseUrlProperty == null || baseUrlProperty.isEmpty()) {
+            this.baseUrl = "https://partner.intacct.com/ia/api/v1-beta2";
+        } else {
+            this.baseUrl = baseUrlProperty;
+        }
 
         if (this.currentAccessToken == null) {
             // Handle initialization failure - maybe throw an exception?
@@ -47,7 +56,7 @@ public class ModelService {
 
         // Configure RestClient with base URL and Authorization header
         this.restClient = RestClient.builder()
-                .baseUrl(BASE_URL)
+                .baseUrl(this.baseUrl)
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + this.currentAccessToken)
                 // Add other default headers if needed
                 // .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
@@ -230,13 +239,13 @@ public class ModelService {
         }
 
         logger.info("Requesting list of all available models...");
-        logger.debug("Using base URL: {}", BASE_URL);
+        logger.debug("Using base URL: {}", this.baseUrl);
         logger.debug("Current access token (first 10 chars): {}",
                 this.currentAccessToken != null ? this.currentAccessToken.substring(0, Math.min(10, this.currentAccessToken.length())) + "..." : "null");
 
         try {
             // Log the full request URL
-            String fullUrl = BASE_URL + "/services/core/model";
+            String fullUrl = this.baseUrl + "/services/core/model";
             logger.debug("Making GET request to: {}", fullUrl);
 
             ModelListApiResponse response = restClient.get()

@@ -349,6 +349,11 @@ public class McpServerProperties {
         private String password;
 
         /**
+         * Base URL for Intacct API
+         */
+        private String baseUrl;
+
+        /**
          * OAuth2 configuration
          */
         @NestedConfigurationProperty
@@ -382,6 +387,14 @@ public class McpServerProperties {
 
         public void setPassword(String password) {
             this.password = password;
+        }
+
+        public String getBaseUrl() {
+            return baseUrl;
+        }
+
+        public void setBaseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
         }
 
         public OAuth2Config getOauth2() {
