@@ -98,8 +98,8 @@ public class AuthService {
             logger.debug("Properties.getAuth() is null: {}", properties.getAuth() == null);
         }
         
-        logger.debug("System properties - OAUTH2_CLIENT_ID: {}", System.getProperty("OAUTH2_CLIENT_ID"));
-        logger.debug("System properties - OAUTH2_USERNAME: {}", System.getProperty("OAUTH2_USERNAME"));
+        logger.debug("System properties - intacct.client-id: {}", System.getProperty("intacct.client-id"));
+        logger.debug("System properties - intacct.username: {}", System.getProperty("intacct.username"));
         logger.debug("Environment variables - OAUTH2_CLIENT_ID: {}", System.getenv("OAUTH2_CLIENT_ID"));
         logger.debug("Environment variables - OAUTH2_USERNAME: {}", System.getenv("OAUTH2_USERNAME"));
         
@@ -110,10 +110,10 @@ public class AuthService {
             this.password = properties.getAuth().getPassword();
             logger.debug("Using properties from McpServerProperties: clientId={}, username={}", this.clientId, this.username);
         } else {
-            this.clientId = System.getProperty("OAUTH2_CLIENT_ID", "");
-            this.clientSecret = System.getProperty("OAUTH2_CLIENT_SECRET", "");
-            this.username = System.getProperty("OAUTH2_USERNAME", "");
-            this.password = System.getProperty("OAUTH2_PASSWORD", "");
+            this.clientId = System.getProperty("intacct.client-id", "");
+            this.clientSecret = System.getProperty("intacct.client-secret", "");
+            this.username = System.getProperty("intacct.username", "");
+            this.password = System.getProperty("intacct.password", "");
             logger.debug("Using system properties: clientId={}, username={}", this.clientId, this.username);
         }
         logger.debug("Final configuration: clientId={}, username={}, baseUrl={}", this.clientId, this.username, this.baseUrl);

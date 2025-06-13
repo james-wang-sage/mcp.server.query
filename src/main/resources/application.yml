@@ -12,7 +12,7 @@ mcp:
     prompt-change-notification: true
     
     stdio:
-      enabled: false
+      enabled: true
       disable-console-logging: true
       disable-banner: true
     
@@ -49,7 +49,7 @@ spring:
   profiles:
     active: stdio  # Default profile
   main:
-    web-application-type: servlet
+    web-application-type: none
     banner-mode: off
 
 server:
@@ -65,10 +65,10 @@ caffeine:
 # Logging configuration
 logging:
   file:
-    name: ./mcp-server-query.log
+    name: ${logging.file.name:./mcp-server-query.log}
   pattern:
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    console: ${logging.pattern.console:}
   level:
     root: INFO
     org.springframework.ai.mcp.sample.server: DEBUG
