@@ -82,15 +82,15 @@ public class ServiceUrlConsistencyTest {
     public void testDefaultUrlConsistency() {
         // Clear any system properties
         System.clearProperty("intacct.base.url");
-        
+
         // Create services with default configuration
         AuthService authService = new AuthService(10, 3300, null);
         QueryService queryService = new QueryService(authService);
         ModelService modelService = new ModelService(authService);
-        
-        // Verify default URL is used
-        assertEquals("https://partner.intacct.com/ia/api/v1-beta2", authService.getBaseUrl());
-        
+
+        // Verify default URL is used (updated for environment migration)
+        assertEquals("https://api.intacct.com/ia/api/v1-beta2", authService.getBaseUrl());
+
         // All services should be created successfully
         assertNotNull(authService);
         assertNotNull(queryService);
