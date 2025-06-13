@@ -45,14 +45,18 @@ mcp:
 server:
   port: 8080
 
-# Logging configuration for tests
+# Logging configuration for tests - minimize console output
 logging:
   level:
     root: WARN
-    org.springframework.ai.mcp.sample.server: INFO
+    org.springframework.ai.mcp.sample.server.AuthService: ERROR
+    org.springframework.ai.mcp.sample.server.QueryService: ERROR
+    org.springframework.ai.mcp.sample.server.ModelService: ERROR
+    org.springframework.web.client: ERROR
+    org.springframework.http.client: ERROR
     org.springframework.web: WARN
   pattern:
-    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    console: ""
 
 # Caffeine cache configuration for AuthService
 caffeine:
