@@ -30,19 +30,19 @@ mcp:
         max-age: 3600
     
     auth:
-      mode: NONE
+      mode: OAUTH2
       session:
         timeout-seconds: 3600
         max-sessions: 1000
         cleanup-interval-seconds: 300
-      username: ${OAUTH2_USERNAME:admin@oauth2_main2}
-      password: ${OAUTH2_PASSWORD:Aa123456!}
-      base-url: ${INTACCT_BASE_URL:https://api-partner-main.intacct.com/ia/api/v1-beta2}
+      username: ${intacct.username:Admin@GK_p301}
+      password: ${intacct.password:Aa123456!}
+      base-url: ${intacct.base.url:https://api-partner-main.intacct.com/ia/api/v1-beta2}
       oauth2:
-        client-id: ${OAUTH2_CLIENT_ID:d4f2b6b318174b9a60a7.INTACCT.app.sage.com}
-        client-secret: ${OAUTH2_CLIENT_SECRET:0f4e72b76e88906255c34a800b5e177fce5f1ba9}
-        authorization-uri: ${OAUTH2_AUTH_URI:https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/authorize}
-        token-uri: ${OAUTH2_TOKEN_URI:https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token}
+        client-id: ${intacct.client-id:03a3360f98c7939106c0.app.sage.com}
+        client-secret: ${intacct.client-secret:7eeb4d670319278c579521041e838d83c2797c84}
+        authorization-uri: ${intacct.base.url:https://api-partner-main.intacct.com/ia/api/v1-beta2}/oauth2/authorize
+        token-uri: ${intacct.token.endpoint:https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token}
         redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:8080/login/oauth2/code/mcp-client}
 
 spring:
@@ -98,12 +98,12 @@ mcp:
       enabled: false
     auth:
       mode: OAUTH2
-      username: ${OAUTH2_USERNAME:admin@oauth2_main2}
-      password: ${OAUTH2_PASSWORD:Aa123456!}
+      username: ${OAUTH2_USERNAME}
+      password: ${OAUTH2_PASSWORD}
       base-url: ${INTACCT_BASE_URL:https://api-partner-main.intacct.com/ia/api/v1-beta2}
       oauth2:
-        client-id: ${OAUTH2_CLIENT_ID:d4f2b6b318174b9a60a7.INTACCT.app.sage.com}
-        client-secret: ${OAUTH2_CLIENT_SECRET:0f4e72b76e88906255c34a800b5e177fce5f1ba9}
+        client-id: ${OAUTH2_CLIENT_ID}
+        client-secret: ${OAUTH2_CLIENT_SECRET}
         authorization-uri: ${OAUTH2_AUTH_URI:https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/authorize}
         token-uri: ${OAUTH2_TOKEN_URI:https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token}
         redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:8080/login/oauth2/code/mcp-client}
@@ -123,12 +123,12 @@ mcp:
       enabled: true
     auth:
       mode: OAUTH2
-      username: ${OAUTH2_USERNAME:admin@oauth2_main2}
-      password: ${OAUTH2_PASSWORD:Aa123456!}
+      username: ${OAUTH2_USERNAME}
+      password: ${OAUTH2_PASSWORD}
       base-url: ${INTACCT_BASE_URL:https://api-partner-main.intacct.com/ia/api/v1-beta2}
       oauth2:
-        client-id: ${OAUTH2_CLIENT_ID:d4f2b6b318174b9a60a7.INTACCT.app.sage.com}
-        client-secret: ${OAUTH2_CLIENT_SECRET:0f4e72b76e88906255c34a800b5e177fce5f1ba9}
+        client-id: ${OAUTH2_CLIENT_ID}
+        client-secret: ${OAUTH2_CLIENT_SECRET}
         authorization-uri: ${OAUTH2_AUTH_URI:https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/authorize}
         token-uri: ${OAUTH2_TOKEN_URI:https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token}
         redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:8080/login/oauth2/code/mcp-client}
