@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.mcp.sample.server.config.McpServerProperties;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -67,12 +68,29 @@ public class AuthService {
             @Value("${caffeine.auth.cache.ttl-seconds:3300}") int ttlSeconds,
             McpServerProperties properties
     ) {
-        this.tokenClient = RestClient.builder().build();
+        this.tokenClient = RestClient.builder()
+                .defaultHeader(HttpHeaders.USER_AGENT, "MCP-Query-Server/1.0 (Java)")
+                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .build();
         this.tokenCache = Caffeine.newBuilder()
                 .maximumSize(maxSize)
                 .expireAfterWrite(Duration.ofSeconds(ttlSeconds))
                 .build();
-        this.baseUrl = "https://partner.intacct.com/ia3/api/v1-beta2";
+
+        // Get base URL from properties, then system property, then fallback to default
+        if (properties != null && properties.getAuth() != null && properties.getAuth().getBaseUrl() != null && !properties.getAuth().getBaseUrl().isEmpty()) {
+            this.baseUrl = properties.getAuth().getBaseUrl();
+        } else {
+            String baseUrlProperty = System.getProperty("intacct.base.url");
+            if (baseUrlProperty == null || baseUrlProperty.isEmpty()) {
+                // Updated default URL - partner.intacct.com was deprecated on June 13, 2025
+                // Users should specify the correct new partner environment URL
+                this.baseUrl = "https://api-partner-main.intacct.com/ia/api/v1-beta2"; // Updated default
+                logger.warn("Using default API URL (api-partner-main.intacct.com). This is the current recommended URL. If you need to use a different partner environment, please configure it explicitly.");
+            } else {
+                this.baseUrl = baseUrlProperty;
+            }
+        }
         
         logger.debug("AuthService constructor called with properties: {}", properties);
         logger.debug("Properties is null: {}", properties == null);
@@ -103,6 +121,14 @@ public class AuthService {
 
     public AuthService() {
         this(10, 3300, null);
+    }
+
+    /**
+     * Gets the configured base URL for Intacct API.
+     * @return The base URL being used by this AuthService instance
+     */
+    public String getBaseUrl() {
+        return this.baseUrl;
     }
 
     /**

@@ -2,6 +2,24 @@
 
 A Spring Boot starter project demonstrating how to build a Model Context Protocol (MCP) server that provides Sage Intacct query and model definition tools using the Intacct Core API. This project showcases the Spring AI MCP Server Boot Starter capabilities with STDIO transport implementation.
 
+## ⚠️ IMPORTANT: Environment Migration Notice
+
+**Sage Intacct has deprecated the legacy partner environment `partner.intacct.com` as of June 13, 2025.**
+
+**Action Required:**
+- Update your configuration to use the new partner environment URLs
+- Contact your Sage Intacct administrator for your new partner environment URL
+- Replace all instances of `partner.intacct.com` with `api-partner-main.intacct.com`
+
+**Example Migration:**
+```bash
+# OLD (deprecated)
+-Dintacct.base.url=https://partner.intacct.com/ia/api/v1-beta2
+
+# NEW (update with your assigned environment)
+-Dintacct.base.url=https://api-partner-main.intacct.com/ia/api/v1-beta2
+```
+
 For more information, see the [MCP Server Boot Starter](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-server-boot-starter-docs.html) reference documentation.
 
 ## Prerequisites
@@ -175,20 +193,46 @@ The server requires OAuth2 credentials for Intacct API access. Configure through
 
 ### System Properties:
 ```bash
+# Core authentication
 -Dintacct.client-id=your_client_id
 -Dintacct.client-secret=your_client_secret
 -Dintacct.username=your_username
 -Dintacct.password=your_password
--Dintacct.base-url=https://partner.intacct.com/ia3/api/v1-beta2
+
+# API endpoints (all configurable) - UPDATE TO YOUR NEW ENVIRONMENT
+-Dintacct.base.url=https://api-partner-main.intacct.com/ia/api/v1-beta2
+-Dintacct.token.endpoint=https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token
+
+# Alternative environment variables
+-DOAUTH2_CLIENT_ID=your_client_id
+-DOAUTH2_CLIENT_SECRET=your_client_secret
+-DOAUTH2_USERNAME=your_username
+-DOAUTH2_PASSWORD=your_password
+-DINTACCT_BASE_URL=https://api-partner-main.intacct.com/ia/api/v1-beta2
+-DOAUTH2_AUTH_URI=https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/authorize
+-DOAUTH2_TOKEN_URI=https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token
+-DOAUTH2_REDIRECT_URI=http://localhost:8080/login/oauth2/code/mcp-client
 ```
 
 ### Application Properties:
 ```properties
+# Core authentication
 intacct.client-id=your_client_id
 intacct.client-secret=your_client_secret
 intacct.username=your_username
 intacct.password=your_password
-intacct.base-url=https://partner.intacct.com/ia3/api/v1-beta2
+
+# API endpoints (all configurable)
+intacct.base.url=https://api-partner-main.intacct.com/ia/api/v1-beta2
+intacct.token.endpoint=https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token
+
+# MCP Server configuration (via application.yml)
+mcp.server.auth.base-url=https://api-partner-main.intacct.com/ia/api/v1-beta2
+mcp.server.auth.oauth2.client-id=your_client_id
+mcp.server.auth.oauth2.client-secret=your_client_secret
+mcp.server.auth.oauth2.authorization-uri=https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/authorize
+mcp.server.auth.oauth2.token-uri=https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token
+mcp.server.auth.oauth2.redirect-uri=http://localhost:8080/login/oauth2/code/mcp-client
 ```
 
 ### Environment Variables:
@@ -246,6 +290,8 @@ Add to Claude Desktop configuration:
         "-Dintacct.client-secret=YOUR_CLIENT_SECRET",
         "-Dintacct.username=YOUR_USERNAME",
         "-Dintacct.password=YOUR_PASSWORD",
+        "-Dintacct.base.url=https://api-partner-main.intacct.com/ia/api/v1-beta2",
+        "-Dintacct.token.endpoint=https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token",
         "-jar",
         "/absolute/path/to/mcp-query-stdio-server-0.1.0.jar"
       ]

@@ -27,17 +27,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class QueryService {
 
     private static final Logger logger = LoggerFactory.getLogger(QueryService.class);
-    // Base URL for Intacct API, should be injected via configuration
-    private static final String BASE_URL = "https://partner.intacct.com/ia3/api/v1-beta2";
 
     private final RestClient restClient;
     private final AuthService authService;
     private String currentAccessToken; // Store the token used by this instance's RestClient
+    private final String baseUrl; // Store the base URL for this instance
 
     @Autowired
     public QueryService(AuthService authService) {
         this.authService = authService;
         this.currentAccessToken = this.authService.getAccessToken();
+
+        // Get base URL from AuthService's baseUrl (which already handles properties priority)
+        // This ensures QueryService uses the same baseUrl as AuthService
+        this.baseUrl = authService.getBaseUrl();
 
         if (this.currentAccessToken == null) {
             logger.error("Failed to obtain access token during initialization. QueryService may not function correctly.");
@@ -47,9 +50,11 @@ public class QueryService {
 
         // Configure RestClient with base URL and Authorization header
         this.restClient = RestClient.builder()
-                .baseUrl(BASE_URL)
+                .baseUrl(this.baseUrl)
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + this.currentAccessToken)
                 .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader(HttpHeaders.USER_AGENT, "MCP-Query-Server/1.0 (Java)")
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
     }
 
@@ -278,6 +283,12 @@ public class QueryService {
     ) {
         Objects.requireNonNull(object, "Query object cannot be null");
 
+        // Fix common mistake: remove "objects/" prefix if present
+        if (object.startsWith("objects/")) {
+            object = object.substring("objects/".length());
+            logger.debug("Removed 'objects/' prefix from object name. Using: {}", object);
+        }
+
         // Validate that filterExpression is only used when filters are provided
         if (filterExpression != null && !filterExpression.trim().isEmpty()
                 && (filters == null || filters.isEmpty())) {
@@ -308,6 +319,8 @@ public class QueryService {
 
         logger.info("Executing query for object: {}", object);
         logger.debug("Query Request Body: {}", requestBody); // Be cautious logging request bodies if they contain sensitive data
+        logger.debug("Using base URL: {}", this.baseUrl);
+        logger.debug("Full request URL: {}/services/core/query", this.baseUrl);
 
         try {
             QueryApiResponse response = restClient.post()

@@ -11,6 +11,7 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -27,15 +28,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class ModelService {
 
     private static final Logger logger = LoggerFactory.getLogger(ModelService.class);
-    private static final String BASE_URL = "https://partner.intacct.com/ia3/api/v1-beta2"; // Base URL from OpenAPI spec
+
     private final RestClient restClient;
     private final AuthService authService;
     private String currentAccessToken; // Store the token used by this instance's RestClient
+    private final String baseUrl; // Store the base URL for this instance
 
     @Autowired
     public ModelService(AuthService authService) {
         this.authService = authService;
         this.currentAccessToken = this.authService.getAccessToken();
+
+        // Get base URL from AuthService's baseUrl (which already handles properties priority)
+        // This ensures ModelService uses the same baseUrl as AuthService
+        this.baseUrl = authService.getBaseUrl();
 
         if (this.currentAccessToken == null) {
             // Handle initialization failure - maybe throw an exception?
@@ -47,10 +53,10 @@ public class ModelService {
 
         // Configure RestClient with base URL and Authorization header
         this.restClient = RestClient.builder()
-                .baseUrl(BASE_URL)
+                .baseUrl(this.baseUrl)
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + this.currentAccessToken)
-                // Add other default headers if needed
-                // .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader(HttpHeaders.USER_AGENT, "MCP-Query-Server/1.0 (Java)")
                 .build();
     }
 
@@ -166,6 +172,15 @@ public class ModelService {
     ) {
         Objects.requireNonNull(name, "Resource name cannot be null");
 
+        // Fix common mistake: remove "objects/" prefix if present
+        final String resourceName;
+        if (name.startsWith("objects/")) {
+            resourceName = name.substring("objects/".length());
+            logger.debug("Removed 'objects/' prefix from resource name. Using: {}", resourceName);
+        } else {
+            resourceName = name;
+        }
+
         // Check if RestClient was initialized properly (access token obtained)
         if (this.currentAccessToken == null) {
              logger.error("Cannot get model definition: Access token was not obtained during initialization.");
@@ -174,12 +189,12 @@ public class ModelService {
 
         // Use UriBuilder within the RestClient call to correctly combine with base URL
         logger.info("Requesting model definition for name: {}, type: {}, version: {}, schema: {}, tags: {}",
-                name, type, version, schema, tags);
+                resourceName, type, version, schema, tags);
 
         try {
             ModelApiResponse response = restClient.get()
                     .uri(builder -> {
-                        builder = builder.path("/services/core/model").queryParam("name", name);
+                        builder = builder.path("/services/core/model").queryParam("name", resourceName);
                         // Add optional parameters if they are provided
                         if (type != null && !type.isEmpty()) {
                             builder.queryParam("type", type);
@@ -201,14 +216,14 @@ public class ModelService {
                     .body(ModelApiResponse.class);
 
             if (response != null) {
-                 logger.debug("Successfully retrieved model definition for '{}'", name);
+                 logger.debug("Successfully retrieved model definition for '{}'", resourceName);
                  return response.result();
             } else {
-                 logger.warn("Received null response for model definition request: {}", name);
+                 logger.warn("Received null response for model definition request: {}", resourceName);
                  return null;
             }
         } catch (RestClientException e) {
-            logger.error("Error retrieving model definition for '{}': {}", name, e.getMessage(), e);
+            logger.error("Error retrieving model definition for '{}': {}", resourceName, e.getMessage(), e);
             // Consider throwing a custom exception or returning a specific error object
             // TODO: Handle potential 401 Unauthorized if token expires
             return null;
@@ -230,13 +245,13 @@ public class ModelService {
         }
 
         logger.info("Requesting list of all available models...");
-        logger.debug("Using base URL: {}", BASE_URL);
+        logger.debug("Using base URL: {}", this.baseUrl);
         logger.debug("Current access token (first 10 chars): {}",
                 this.currentAccessToken != null ? this.currentAccessToken.substring(0, Math.min(10, this.currentAccessToken.length())) + "..." : "null");
 
         try {
             // Log the full request URL
-            String fullUrl = BASE_URL + "/services/core/model";
+            String fullUrl = this.baseUrl + "/services/core/model";
             logger.debug("Making GET request to: {}", fullUrl);
 
             ModelListApiResponse response = restClient.get()
