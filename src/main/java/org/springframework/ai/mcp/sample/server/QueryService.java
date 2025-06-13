@@ -38,13 +38,9 @@ public class QueryService {
         this.authService = authService;
         this.currentAccessToken = this.authService.getAccessToken();
 
-        // Get base URL from system property, fallback to default
-        String baseUrlProperty = System.getProperty("intacct.base.url");
-        if (baseUrlProperty == null || baseUrlProperty.isEmpty()) {
-            this.baseUrl = "https://partner.intacct.com/ia/api/v1-beta2";
-        } else {
-            this.baseUrl = baseUrlProperty;
-        }
+        // Get base URL from AuthService's baseUrl (which already handles properties priority)
+        // This ensures QueryService uses the same baseUrl as AuthService
+        this.baseUrl = authService.getBaseUrl();
 
         if (this.currentAccessToken == null) {
             logger.error("Failed to obtain access token during initialization. QueryService may not function correctly.");

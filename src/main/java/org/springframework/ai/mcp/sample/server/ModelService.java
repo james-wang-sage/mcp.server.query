@@ -38,13 +38,9 @@ public class ModelService {
         this.authService = authService;
         this.currentAccessToken = this.authService.getAccessToken();
 
-        // Get base URL from system property, fallback to default
-        String baseUrlProperty = System.getProperty("intacct.base.url");
-        if (baseUrlProperty == null || baseUrlProperty.isEmpty()) {
-            this.baseUrl = "https://partner.intacct.com/ia/api/v1-beta2";
-        } else {
-            this.baseUrl = baseUrlProperty;
-        }
+        // Get base URL from AuthService's baseUrl (which already handles properties priority)
+        // This ensures ModelService uses the same baseUrl as AuthService
+        this.baseUrl = authService.getBaseUrl();
 
         if (this.currentAccessToken == null) {
             // Handle initialization failure - maybe throw an exception?

@@ -117,6 +117,14 @@ public class AuthService {
     }
 
     /**
+     * Gets the configured base URL for Intacct API.
+     * @return The base URL being used by this AuthService instance
+     */
+    public String getBaseUrl() {
+        return this.baseUrl;
+    }
+
+    /**
      * Gets a valid access token from Caffeine cache, fetching a new one if needed.
      * This method is thread-safe.
      *
