@@ -53,6 +53,8 @@ public class QueryService {
                 .baseUrl(this.baseUrl)
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + this.currentAccessToken)
                 .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader(HttpHeaders.USER_AGENT, "MCP-Query-Server/1.0 (Java)")
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
     }
 
@@ -317,6 +319,8 @@ public class QueryService {
 
         logger.info("Executing query for object: {}", object);
         logger.debug("Query Request Body: {}", requestBody); // Be cautious logging request bodies if they contain sensitive data
+        logger.debug("Using base URL: {}", this.baseUrl);
+        logger.debug("Full request URL: {}/services/core/query", this.baseUrl);
 
         try {
             QueryApiResponse response = restClient.post()

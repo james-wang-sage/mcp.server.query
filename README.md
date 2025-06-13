@@ -2,6 +2,24 @@
 
 A Spring Boot starter project demonstrating how to build a Model Context Protocol (MCP) server that provides Sage Intacct query and model definition tools using the Intacct Core API. This project showcases the Spring AI MCP Server Boot Starter capabilities with STDIO transport implementation.
 
+## ⚠️ IMPORTANT: Environment Migration Notice
+
+**Sage Intacct has deprecated the legacy partner environment `partner.intacct.com` as of June 13, 2025.**
+
+**Action Required:**
+- Update your configuration to use the new partner environment URLs
+- Contact your Sage Intacct administrator for your new partner environment URL
+- Replace all instances of `partner.intacct.com` with your assigned new environment
+
+**Example Migration:**
+```bash
+# OLD (deprecated)
+-Dintacct.base.url=https://partner.intacct.com/ia/api/v1-beta2
+
+# NEW (update with your assigned environment)
+-Dintacct.base.url=https://your-new-partner-env.intacct.com/ia/api/v1-beta2
+```
+
 For more information, see the [MCP Server Boot Starter](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-server-boot-starter-docs.html) reference documentation.
 
 ## Prerequisites
@@ -181,9 +199,9 @@ The server requires OAuth2 credentials for Intacct API access. Configure through
 -Dintacct.username=your_username
 -Dintacct.password=your_password
 
-# API endpoints (all configurable)
--Dintacct.base.url=https://partner.intacct.com/ia/api/v1-beta2
--Dintacct.token.endpoint=https://partner.intacct.com/ia/api/v1-beta2/oauth2/token
+# API endpoints (all configurable) - UPDATE TO YOUR NEW ENVIRONMENT
+-Dintacct.base.url=https://your-new-partner-env.intacct.com/ia/api/v1-beta2
+-Dintacct.token.endpoint=https://your-new-partner-env.intacct.com/ia/api/v1-beta2/oauth2/token
 
 # Alternative environment variables
 -DOAUTH2_CLIENT_ID=your_client_id
