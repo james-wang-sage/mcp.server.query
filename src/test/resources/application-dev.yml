@@ -1,13 +1,8 @@
 # Test configuration for dev profile
 spring:
   main:
-    web-application-type: servlet
+    web-application-type: none
     banner-mode: off
-  
-  # Enable web environment for testing
-  web:
-    resources:
-      add-mappings: false
 
 # MCP Server Configuration for testing
 mcp:
@@ -50,10 +45,6 @@ mcp:
         - default
         - vendor
         - customer
-
-# Server configuration
-server:
-  port: 8080
 
 # Logging configuration for tests
 logging:

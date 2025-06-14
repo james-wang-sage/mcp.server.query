@@ -7,10 +7,9 @@ A Spring Boot application that implements the Model Context Protocol (MCP) serve
 - **MCP Protocol Compliance**: Full implementation of MCP server specification
 - **Sage Intacct Integration**: Direct integration with Intacct Core Query and Model APIs
 - **OAuth2 Authentication**: Secure authentication with token caching using Caffeine
-- **Multiple Transport Modes**: STDIO (primary) and SSE/HTTP support
+- **STDIO Transport**: Process-based communication via stdin/stdout
 - **Spring AI Tools**: Annotated tools for AI model integration
 - **Comprehensive Error Handling**: Robust error handling and logging
-- **Multi-Profile Support**: Different configurations for development, testing, and production
 
 ## Prerequisites
 
@@ -20,11 +19,10 @@ A Spring Boot application that implements the Model Context Protocol (MCP) serve
 
 ## Configuration
 
-The server supports multiple profiles and can be configured through `application.yml` or environment variables:
+The server can be configured through `application.yml` or environment variables:
 
 ### Environment Variables
 
-For STDIO mode (production):
 ```bash
 export OAUTH2_CLIENT_ID="your-client-id"
 export OAUTH2_CLIENT_SECRET="your-client-secret"
@@ -33,14 +31,9 @@ export OAUTH2_PASSWORD="your-password"
 export INTACCT_BASE_URL="https://api-partner-main.intacct.com/ia/api/v1-beta2"
 ```
 
-### Configuration Profiles
+### Configuration
 
-#### STDIO Profile (Default)
 ```yaml
-spring:
-  profiles:
-    active: stdio
-
 mcp:
   server:
     name: query-server
@@ -68,14 +61,10 @@ mvn clean package
 
 # Build with tests
 mvn clean package -DskipTests=false
-
-# Build specific profile
-mvn clean package -Pstdio
 ```
 
 ## Running
 
-### STDIO Mode (Default)
 ```bash
 # Set environment variables first
 export OAUTH2_CLIENT_ID="your-client-id"
@@ -83,13 +72,8 @@ export OAUTH2_CLIENT_SECRET="your-client-secret"
 export OAUTH2_USERNAME="your-username"
 export OAUTH2_PASSWORD="your-password"
 
-# Run with STDIO profile
-java -jar target/mcp-query-stdio-server-0.1.0.jar --spring.profiles.active=stdio
-```
-
-### Development Mode
-```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
+# Run the server
+java -jar target/mcp-query-stdio-server-0.1.0.jar
 ```
 
 ## Development
@@ -119,10 +103,8 @@ src/
 │   │                           │   ├── ModelService.java
 │   │                           │   └── QueryService.java
 │   │                           └── transport/
-│   │                               ├── McpToolIntegration.java
 │   │                               ├── StdioTransport.java
-│   │                               ├── TransportManager.java
-│   │                               └── TransportMode.java
+│   │                               └── TransportManager.java
 │   └── resources/
 │       ├── application.yml
 │       ├── application.properties
@@ -171,16 +153,12 @@ src/
 ### Transport Layer
 
 #### TransportManager
-- **Purpose**: Manages initialization and lifecycle of transport modes
+- **Purpose**: Manages initialization and lifecycle of transport mode
 - **Features**: STDIO transport management and health checking
 
 #### StdioTransport
 - **Purpose**: Handles STDIO transport mode for MCP communication
 - **Features**: Process-based communication via stdin/stdout
-
-#### McpToolIntegration
-- **Purpose**: Bridges MCP tools with SSE transport (when enabled)
-- **Features**: Tool discovery, invocation, and reflection-based parameter mapping
 
 ## Available Tools
 
@@ -245,24 +223,3 @@ mvn compile exec:java -Dexec.mainClass="com.intacct.ds.mcp.server.query.service.
 mvn compile exec:java -Dexec.mainClass="com.intacct.ds.mcp.server.query.service.QueryService" \
   -Dexec.classpathScope="test"
 ```
-
-### Integration with MCP Clients
-
-The server implements the standard MCP protocol and can be used with any MCP-compatible client:
-
-1. **STDIO Mode**: Direct process communication
-
-## Dependencies
-
-### Core Dependencies
-- **Spring Boot 3.3.6**: Application framework
-- **Spring AI 1.0.0**: AI integration and MCP server support
-- **Spring Security**: OAuth2 authentication
-- **Spring WebFlux**: Reactive web support for SSE
-- **Caffeine**: High-performance caching
-- **Jackson**: JSON processing
-
-### Testing Dependencies
-- **JUnit 5**: Unit testing framework
-- **Mockito**: Mocking framework
-- **Spring Boot Test**: Integration testing

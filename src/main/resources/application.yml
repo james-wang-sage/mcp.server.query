@@ -1,6 +1,5 @@
 # Main MCP Server Configuration
 # This file provides the base configuration for the MCP server
-# Profile-specific configurations override these settings
 
 mcp:
   server:
@@ -48,14 +47,12 @@ spring:
     name: mcp-query-server
   main:
     banner-mode: off
+    web-application-type: none
   logging:
     level:
       root: INFO
       org.springframework.ai.mcp: DEBUG
       org.springframework.web: INFO
-
-server:
-  port: ${mcp.server.sse.port:8080}
 
 # Caffeine cache configuration for AuthService
 caffeine:
@@ -74,103 +71,3 @@ logging:
   level:
     root: INFO
     org.springframework.ai.mcp.sample.server: DEBUG
-
----
-# STDIO Profile Configuration
-spring:
-  config:
-    activate:
-      on-profile: stdio
-  main:
-    web-application-type: none
-
-logging:
-  level:
-    root: OFF
-    org.springframework: OFF
-    org.springframework.ai.mcp.query: OFF
-  pattern:
-    console: ""
-
-mcp:
-  server:
-    stdio:
-      enabled: true
-    sse:
-      enabled: false
-    auth:
-      mode: OAUTH2
-      username: ${OAUTH2_USERNAME}
-      password: ${OAUTH2_PASSWORD}
-      base-url: ${INTACCT_BASE_URL:https://api-partner-main.intacct.com/ia/api/v1-beta2}
-      oauth2:
-        client-id: ${OAUTH2_CLIENT_ID}
-        client-secret: ${OAUTH2_CLIENT_SECRET}
-        authorization-uri: ${OAUTH2_AUTH_URI:https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/authorize}
-        token-uri: ${OAUTH2_TOKEN_URI:https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token}
-        redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:8080/login/oauth2/code/mcp-client}
-
----
-# SSE Profile Configuration  
-spring:
-  config:
-    activate:
-      on-profile: sse
-
-mcp:
-  server:
-    stdio:
-      enabled: false
-    sse:
-      enabled: true
-    auth:
-      mode: OAUTH2
-      username: ${OAUTH2_USERNAME}
-      password: ${OAUTH2_PASSWORD}
-      base-url: ${INTACCT_BASE_URL:https://api-partner-main.intacct.com/ia/api/v1-beta2}
-      oauth2:
-        client-id: ${OAUTH2_CLIENT_ID}
-        client-secret: ${OAUTH2_CLIENT_SECRET}
-        authorization-uri: ${OAUTH2_AUTH_URI:https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/authorize}
-        token-uri: ${OAUTH2_TOKEN_URI:https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token}
-        redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:8080/login/oauth2/code/mcp-client}
-
----
-# Dual Mode Profile (both STDIO and SSE)
-spring:
-  config:
-    activate:
-      on-profile: dual
-
-logging:
-  pattern:
-    console: ""  # No console output for STDIO compatibility
-
-mcp:
-  server:
-    stdio:
-      enabled: true
-    sse:
-      enabled: true
-
----
-# Development Profile
-spring:
-  config:
-    activate:
-      on-profile: dev
-
-logging:
-  level:
-    org.springframework.web: DEBUG
-
-mcp:
-  server:
-    stdio:
-      enabled: false
-    sse:
-      enabled: true
-      cors:
-        allowed-origins: ["http://localhost:3000", "http://localhost:8080"]
-    auth:
-      mode: NONE  # No auth for development

@@ -4,16 +4,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.intacct.ds.mcp.server.query.config.McpServerProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
+
+import com.intacct.ds.mcp.server.query.config.McpServerProperties;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 
 /**
- * Manages the initialization and lifecycle of MCP transport modes.
- * Currently supports STDIO transport mode.
+ * Manages the initialization and lifecycle of STDIO transport.
  */
 @Component
 public class TransportManager {
@@ -32,12 +32,7 @@ public class TransportManager {
     @PostConstruct
     public void initialize() {
         logger.info("Initializing MCP transport manager...");
-        
-        // Initialize STDIO transport if enabled
-        if (properties.getStdio().isEnabled()) {
-            initializeStdioTransport();
-        }
-        
+        initializeStdioTransport();
         initialized.set(true);
     }
 
@@ -51,13 +46,10 @@ public class TransportManager {
     @PreDestroy
     public void shutdown() {
         logger.info("Shutting down MCP transport manager...");
-        
-        // Shutdown STDIO transport if initialized
         if (stdioTransport != null) {
             stdioTransport.shutdown();
             logger.info("STDIO transport shut down successfully");
         }
-        
         initialized.set(false);
     }
 
@@ -69,18 +61,9 @@ public class TransportManager {
     }
 
     /**
-     * Check if a specific transport mode is active
+     * Check if STDIO transport is active
      */
     public boolean isTransportActive(TransportMode mode) {
-        if (!initialized.get()) {
-            return false;
-        }
-        
-        switch (mode) {
-            case STDIO:
-                return stdioTransport != null;
-            default:
-                return false;
-        }
+        return initialized.get() && stdioTransport != null;
     }
 }

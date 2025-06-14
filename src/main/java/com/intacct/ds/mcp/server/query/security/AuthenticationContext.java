@@ -1,76 +1,53 @@
 package com.intacct.ds.mcp.server.query.security;
 
-import com.intacct.ds.mcp.server.query.transport.TransportMode;
+import java.time.Instant;
 
 /**
- * Represents the authentication context for a user session.
- * Currently only supports STDIO transport mode.
+ * Represents the authentication context for the current request.
  */
 public class AuthenticationContext {
-    private final TransportMode transportMode;
     private String accessToken;
-    private long expiresAt;
+    private Instant expiration;
+    private String username;
+    private String baseUrl;
 
-    /**
-     * Constructor for STDIO mode
-     */
-    public AuthenticationContext(TransportMode transportMode) {
-        this.transportMode = transportMode;
+    public AuthenticationContext() {
+        // Default constructor for STDIO mode
     }
 
-    /**
-     * Get the transport mode
-     */
-    public TransportMode getTransportMode() {
-        return transportMode;
-    }
-
-    /**
-     * Check if this is STDIO transport mode
-     */
-    public boolean isStdioMode() {
-        return transportMode == TransportMode.STDIO;
-    }
-
-    /**
-     * Get the access token
-     */
     public String getAccessToken() {
         return accessToken;
     }
 
-    /**
-     * Set the access token
-     */
     public void setAccessToken(String accessToken) {
         this.accessToken = accessToken;
     }
 
-    /**
-     * Get the token expiration time
-     */
-    public long getExpiresAt() {
-        return expiresAt;
+    public Instant getExpiration() {
+        return expiration;
     }
 
-    /**
-     * Set the token expiration time
-     */
-    public void setExpiresAt(long expiresAt) {
-        this.expiresAt = expiresAt;
+    public void setExpiration(Instant expiration) {
+        this.expiration = expiration;
     }
 
-    /**
-     * Check if the token is expired
-     */
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
     public boolean isExpired() {
-        return System.currentTimeMillis() >= expiresAt;
-    }
-
-    /**
-     * Check if the context is authenticated
-     */
-    public boolean isAuthenticated() {
-        return accessToken != null && !isExpired();
+        return expiration != null && Instant.now().isAfter(expiration);
     }
 }

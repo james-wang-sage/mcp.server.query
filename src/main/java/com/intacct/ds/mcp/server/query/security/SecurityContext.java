@@ -2,54 +2,59 @@ package com.intacct.ds.mcp.server.query.security;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.intacct.ds.mcp.server.query.transport.TransportMode;
 import org.springframework.stereotype.Component;
 
 /**
- * Manages the security context for the MCP server.
- * Currently only supports STDIO transport mode.
+ * Provides access to the current security context.
  */
 @Component
 public class SecurityContext {
     private static final Logger logger = LoggerFactory.getLogger(SecurityContext.class);
 
-    private AuthenticationContext context;
+    private static final ThreadLocal<AuthenticationContext> context = new ThreadLocal<>();
 
     /**
-     * Set the current authentication context
+     * Get the current authentication context.
+     * If no context exists, creates a new one for STDIO mode.
      */
-    public void setAuthenticationContext(AuthenticationContext context) {
-        this.context = context;
+    public static AuthenticationContext getContext() {
+        AuthenticationContext authContext = context.get();
+        if (authContext == null) {
+            authContext = new AuthenticationContext();
+            context.set(authContext);
+        }
+        return authContext;
     }
 
     /**
-     * Clear the current authentication context
+     * Set the current authentication context.
      */
-    public void clear() {
-        this.context = null;
+    public static void setContext(AuthenticationContext authContext) {
+        context.set(authContext);
     }
 
     /**
-     * Get the current authentication context
+     * Clear the current authentication context.
      */
-    public AuthenticationContext getAuthenticationContext() {
-        return context;
+    public static void clearContext() {
+        context.remove();
     }
 
     /**
      * Check if the current context is authenticated
      */
     public boolean isAuthenticated() {
-        if (context == null) {
+        AuthenticationContext authContext = getContext();
+        if (authContext == null) {
             return false;
         }
 
-        if (context.getAccessToken() == null) {
+        if (authContext.getAccessToken() == null) {
             logger.warn("Context is not authenticated");
             return false;
         }
 
-        if (context.isExpired()) {
+        if (authContext.isExpired()) {
             logger.warn("Context token is expired");
             return false;
         }
@@ -62,15 +67,9 @@ public class SecurityContext {
      */
     public String getAccessToken() {
         if (!isAuthenticated()) {
+            logger.warn("Attempting to get access token from unauthenticated context");
             return null;
         }
-        return context.getAccessToken();
-    }
-
-    /**
-     * Create a STDIO authentication context
-     */
-    public static AuthenticationContext createStdioContext() {
-        return new AuthenticationContext(TransportMode.STDIO);
+        return getContext().getAccessToken();
     }
 }

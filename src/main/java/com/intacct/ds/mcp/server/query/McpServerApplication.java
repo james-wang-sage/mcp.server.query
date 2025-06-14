@@ -37,20 +37,11 @@ public class McpServerApplication {
 	private Environment environment;
 
 	public static void main(String[] args) {
-		// Configure application based on active profiles and transport modes
+		// Configure application for STDIO mode only
 		SpringApplication app = new SpringApplication(McpServerApplication.class);
-		
-		// Determine if we should run in web mode based on profiles
-		String[] activeProfiles = determineActiveProfiles(args);
-		boolean isWebMode = shouldRunInWebMode(activeProfiles);
-		
-		if (!isWebMode) {
-			// STDIO mode - disable web application
-			app.setWebApplicationType(org.springframework.boot.WebApplicationType.NONE);
-			System.setProperty("spring.main.banner-mode", "off");
-			System.setProperty("logging.level.root", "OFF");
-		}
-		
+		app.setWebApplicationType(org.springframework.boot.WebApplicationType.NONE);
+		System.setProperty("spring.main.banner-mode", "off");
+		System.setProperty("logging.level.root", "OFF");
 		app.run(args);
 	}
 
@@ -73,19 +64,6 @@ public class McpServerApplication {
 		
 		// Default to stdio profile
 		return new String[]{"stdio"};
-	}
-
-	/**
-	 * Determine if application should run in web mode
-	 */
-	private static boolean shouldRunInWebMode(String[] profiles) {
-		for (String profile : profiles) {
-			String trimmed = profile.trim();
-			if ("sse".equals(trimmed) || "dual".equals(trimmed) || "dev".equals(trimmed)) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	@EventListener(ApplicationReadyEvent.class)
