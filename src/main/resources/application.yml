@@ -1,6 +1,5 @@
 # Main MCP Server Configuration
 # This file provides the base configuration for the MCP server
-# Profile-specific configurations override these settings
 
 mcp:
   server:
@@ -10,165 +9,59 @@ mcp:
     resource-change-notification: true
     tool-change-notification: true
     prompt-change-notification: true
-    
     stdio:
       enabled: true
       disable-console-logging: true
       disable-banner: true
-    
-    sse:
-      enabled: false
-      port: 8080
-      path: /mcp
-      connection-timeout-seconds: 300
-      max-connections: 100
-      cors:
-        allowed-origins: ["*"]
-        allowed-methods: ["GET", "POST", "OPTIONS"]
-        allowed-headers: ["*"]
-        allow-credentials: true
-        max-age: 3600
-    
     auth:
-      mode: OAUTH2
+      mode: NONE
+      oauth2:
+        client-id: ${OAUTH2_CLIENT_ID}
+        client-secret: ${OAUTH2_CLIENT_SECRET}
+        authorization-uri: ${OAUTH2_AUTHORIZATION_URI}
+        token-uri: ${OAUTH2_TOKEN_URI}
+        redirect-uri: ${OAUTH2_REDIRECT_URI}
+        scopes:
+          - openid
+          - profile
+          - email
       session:
         timeout-seconds: 3600
         max-sessions: 1000
         cleanup-interval-seconds: 300
-      username: ${intacct.username:Admin@GK_p301}
-      password: ${intacct.password:Aa123456!}
-      base-url: ${intacct.base.url:https://api-partner-main.intacct.com/ia/api/v1-beta2}
-      oauth2:
-        client-id: ${intacct.client-id:03a3360f98c7939106c0.app.sage.com}
-        client-secret: ${intacct.client-secret:7eeb4d670319278c579521041e838d83c2797c84}
-        authorization-uri: ${intacct.base.url:https://api-partner-main.intacct.com/ia/api/v1-beta2}/oauth2/authorize
-        token-uri: ${intacct.token.endpoint:https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token}
-        redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:8080/login/oauth2/code/mcp-client}
+    tool-integration:
+      tools:
+        - query
+        - model
+      resources:
+        - vendor
+        - customer
+        - invoice
+      prompts:
+        - default
+        - vendor
+        - customer
 
 spring:
-  profiles:
-    active: stdio  # Default profile
+  application:
+    name: mcp-query-server
   main:
-    web-application-type: none
     banner-mode: off
-
-server:
-  port: ${mcp.server.sse.port:8080}
-
-# Caffeine cache configuration for AuthService
-caffeine:
-  auth:
-    cache:
-      max-size: 10
-      ttl-seconds: 3300
+    web-application-type: none
+  cache:
+    type: caffeine
+    cache-names: auth
+    caffeine:
+      spec: maximumSize=10,expireAfterWrite=3300s
 
 # Logging configuration
 logging:
-  file:
-    name: ${logging.file.name:./mcp-server-query.log}
-  pattern:
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-    console: ${logging.pattern.console:}
-  level:
-    root: INFO
-    org.springframework.ai.mcp.sample.server: DEBUG
-
----
-# STDIO Profile Configuration
-spring:
-  config:
-    activate:
-      on-profile: stdio
-  main:
-    web-application-type: none
-
-logging:
   level:
     root: OFF
-    org.springframework: OFF
-    org.springframework.ai.mcp.query: OFF
+    "[org.springframework]": OFF
+    "[org.springframework.ai.mcp.query]": OFF
+  file:
+    name: ./mcp-server-query.log
   pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
     console: ""
-
-mcp:
-  server:
-    stdio:
-      enabled: true
-    sse:
-      enabled: false
-    auth:
-      mode: OAUTH2
-      username: ${OAUTH2_USERNAME}
-      password: ${OAUTH2_PASSWORD}
-      base-url: ${INTACCT_BASE_URL:https://api-partner-main.intacct.com/ia/api/v1-beta2}
-      oauth2:
-        client-id: ${OAUTH2_CLIENT_ID}
-        client-secret: ${OAUTH2_CLIENT_SECRET}
-        authorization-uri: ${OAUTH2_AUTH_URI:https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/authorize}
-        token-uri: ${OAUTH2_TOKEN_URI:https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token}
-        redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:8080/login/oauth2/code/mcp-client}
-
----
-# SSE Profile Configuration  
-spring:
-  config:
-    activate:
-      on-profile: sse
-
-mcp:
-  server:
-    stdio:
-      enabled: false
-    sse:
-      enabled: true
-    auth:
-      mode: OAUTH2
-      username: ${OAUTH2_USERNAME}
-      password: ${OAUTH2_PASSWORD}
-      base-url: ${INTACCT_BASE_URL:https://api-partner-main.intacct.com/ia/api/v1-beta2}
-      oauth2:
-        client-id: ${OAUTH2_CLIENT_ID}
-        client-secret: ${OAUTH2_CLIENT_SECRET}
-        authorization-uri: ${OAUTH2_AUTH_URI:https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/authorize}
-        token-uri: ${OAUTH2_TOKEN_URI:https://api-partner-main.intacct.com/ia/api/v1-beta2/oauth2/token}
-        redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:8080/login/oauth2/code/mcp-client}
-
----
-# Dual Mode Profile (both STDIO and SSE)
-spring:
-  config:
-    activate:
-      on-profile: dual
-
-logging:
-  pattern:
-    console: ""  # No console output for STDIO compatibility
-
-mcp:
-  server:
-    stdio:
-      enabled: true
-    sse:
-      enabled: true
-
----
-# Development Profile
-spring:
-  config:
-    activate:
-      on-profile: dev
-
-logging:
-  level:
-    org.springframework.web: DEBUG
-
-mcp:
-  server:
-    stdio:
-      enabled: false
-    sse:
-      enabled: true
-      cors:
-        allowed-origins: ["http://localhost:3000", "http://localhost:8080"]
-    auth:
-      mode: NONE  # No auth for development

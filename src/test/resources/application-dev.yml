@@ -1,13 +1,8 @@
 # Test configuration for dev profile
 spring:
   main:
-    web-application-type: servlet
+    web-application-type: none
     banner-mode: off
-  
-  # Enable web environment for testing
-  web:
-    resources:
-      add-mappings: false
 
 # MCP Server Configuration for testing
 mcp:
@@ -15,42 +10,48 @@ mcp:
     name: query-server
     version: 0.1.0
     type: SYNC
-    
+    resource-change-notification: true
+    tool-change-notification: true
+    prompt-change-notification: true
     stdio:
-      enabled: false
+      enabled: true
       disable-console-logging: true
       disable-banner: true
-    
-    sse:
-      enabled: true
-      port: 8080
-      path: /mcp
-      connection-timeout-seconds: 300
-      max-connections: 100
-      cors:
-        allowed-origins: ["*"]
-        allowed-methods: ["GET", "POST", "OPTIONS"]
-        allowed-headers: ["*"]
-        allow-credentials: true
-        max-age: 3600
-    
     auth:
-      mode: NONE  # No authentication for dev testing
+      mode: NONE
+      oauth2:
+        client-id: ${OAUTH2_CLIENT_ID}
+        client-secret: ${OAUTH2_CLIENT_SECRET}
+        authorization-uri: ${OAUTH2_AUTHORIZATION_URI}
+        token-uri: ${OAUTH2_TOKEN_URI}
+        redirect-uri: ${OAUTH2_REDIRECT_URI}
+        scopes:
+          - openid
+          - profile
+          - email
       session:
         timeout-seconds: 3600
         max-sessions: 1000
         cleanup-interval-seconds: 300
-
-# Server configuration
-server:
-  port: 8080
+    tool-integration:
+      tools:
+        - query
+        - model
+      resources:
+        - vendor
+        - customer
+        - invoice
+      prompts:
+        - default
+        - vendor
+        - customer
 
 # Logging configuration for tests
 logging:
   level:
-    root: WARN
-    org.springframework.ai.mcp.sample.server: DEBUG
-    org.springframework.web: DEBUG
+    root: INFO
+    org.springframework.ai.mcp: DEBUG
+    org.springframework.web: INFO
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 
