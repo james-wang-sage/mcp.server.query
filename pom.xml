@@ -51,6 +51,13 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         
+        <!-- Jakarta Servlet API -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        
         <!-- Session management -->
         <dependency>
             <groupId>org.springframework.session</groupId>
