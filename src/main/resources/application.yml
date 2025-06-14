@@ -48,26 +48,20 @@ spring:
   main:
     banner-mode: off
     web-application-type: none
-  logging:
-    level:
-      root: INFO
-      org.springframework.ai.mcp: DEBUG
-      org.springframework.web: INFO
-
-# Caffeine cache configuration for AuthService
-caffeine:
-  auth:
-    cache:
-      max-size: 10
-      ttl-seconds: 3300
+  cache:
+    type: caffeine
+    cache-names: auth
+    caffeine:
+      spec: maximumSize=10,expireAfterWrite=3300s
 
 # Logging configuration
 logging:
+  level:
+    root: OFF
+    "[org.springframework]": OFF
+    "[org.springframework.ai.mcp.query]": OFF
   file:
-    name: ${logging.file.name:./mcp-server-query.log}
+    name: ./mcp-server-query.log
   pattern:
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-    console: ${logging.pattern.console:}
-  level:
-    root: INFO
-    org.springframework.ai.mcp.sample.server: DEBUG
+    console: ""
