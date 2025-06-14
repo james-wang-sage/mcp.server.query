@@ -42,3 +42,6 @@ memory-bank/
 .gitignore.save
 .roomodes
 CLAUDE.md
+.augment/
+.claude/
+.cursor/
