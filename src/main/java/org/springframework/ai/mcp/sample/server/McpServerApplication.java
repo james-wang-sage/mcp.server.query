@@ -16,6 +16,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 
+import jakarta.annotation.PostConstruct;
+
 @SpringBootApplication
 @EnableConfigurationProperties(McpServerProperties.class)
 public class McpServerApplication {
@@ -87,36 +89,43 @@ public class McpServerApplication {
 	public void onApplicationReady() {
 		logger.info("MCP Server '{}' v{} is ready", properties.getName(), properties.getVersion());
 		logger.info("Active profiles: {}", String.join(", ", environment.getActiveProfiles()));
-		logger.info("Active transports: {}", transportManager.getActiveTransports());
-		
+		logger.info("Active transport: {}", TransportMode.STDIO);
+
 		if (transportManager.isTransportActive(TransportMode.STDIO)) {
 			logger.info("STDIO transport is active - server ready for process communication");
 			if (properties.getStdio().isDisableConsoleLogging()) {
 				logger.debug("Console logging disabled for STDIO compatibility");
 			}
 		}
-		
-		if (transportManager.isTransportActive(TransportMode.SSE)) {
-			logger.info("SSE transport is active on port {} at path {}",
-				properties.getSse().getPort(), properties.getSse().getPath());
-			logger.info("Authentication mode: {}", properties.getAuth().getMode());
-			
-			if (properties.getAuth().getMode() == McpServerProperties.AuthMode.OAUTH2) {
-				logger.info("OAuth2 client ID: {}", properties.getAuth().getOauth2().getClientId());
-				logger.info("OAuth2 redirect URI: {}", properties.getAuth().getOauth2().getRedirectUri());
-			}
-		}
-		
-		if (transportManager.isDualModeActive()) {
-			logger.info("Dual mode active - both STDIO and SSE transports are available");
-		}
-		
+
 		// Log tool information
 		logger.info("Available tool providers: ModelService, QueryService");
 		logger.info("Server capabilities: resourceChangeNotification={}, toolChangeNotification={}, promptChangeNotification={}",
 			properties.isResourceChangeNotification(),
 			properties.isToolChangeNotification(),
 			properties.isPromptChangeNotification());
+	}
+
+	@PostConstruct
+	public void init() {
+		// Initialize transport manager
+		transportManager.initialize();
+		
+		// Log active transports
+		logger.info("Active transport mode: {}", TransportMode.STDIO);
+		
+		// Log server configuration
+		logger.info("Server name: {}", properties.getName());
+		logger.info("Server version: {}", properties.getVersion());
+		logger.info("Server type: {}", properties.getType());
+		logger.info("Resource change notification: {}", properties.isResourceChangeNotification());
+		logger.info("Tool change notification: {}", properties.isToolChangeNotification());
+		logger.info("Prompt change notification: {}", properties.isPromptChangeNotification());
+		
+		// Log STDIO configuration
+		logger.info("STDIO transport enabled: {}", properties.getStdio().isEnabled());
+		logger.info("STDIO console logging disabled: {}", properties.getStdio().isDisableConsoleLogging());
+		logger.info("STDIO banner disabled: {}", properties.getStdio().isDisableBanner());
 	}
 
 	@Bean

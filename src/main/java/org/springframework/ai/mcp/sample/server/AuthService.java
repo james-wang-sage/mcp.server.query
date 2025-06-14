@@ -78,8 +78,8 @@ public class AuthService {
                 .build();
 
         // Get base URL from properties, then system property, then fallback to default
-        if (properties != null && properties.getAuth() != null && properties.getAuth().getBaseUrl() != null && !properties.getAuth().getBaseUrl().isEmpty()) {
-            this.baseUrl = properties.getAuth().getBaseUrl();
+        if (properties != null && properties.getAuth() != null && properties.getAuth().getOauth2() != null && properties.getAuth().getOauth2().getBaseUrl() != null && !properties.getAuth().getOauth2().getBaseUrl().isEmpty()) {
+            this.baseUrl = properties.getAuth().getOauth2().getBaseUrl();
         } else {
             String baseUrlProperty = System.getProperty("intacct.base.url");
             if (baseUrlProperty == null || baseUrlProperty.isEmpty()) {
@@ -103,11 +103,11 @@ public class AuthService {
         logger.debug("Environment variables - OAUTH2_CLIENT_ID: {}", System.getenv("OAUTH2_CLIENT_ID"));
         logger.debug("Environment variables - OAUTH2_USERNAME: {}", System.getenv("OAUTH2_USERNAME"));
         
-        if (properties != null && properties.getAuth() != null) {
+        if (properties != null && properties.getAuth() != null && properties.getAuth().getOauth2() != null) {
             this.clientId = properties.getAuth().getOauth2().getClientId();
             this.clientSecret = properties.getAuth().getOauth2().getClientSecret();
-            this.username = properties.getAuth().getUsername();
-            this.password = properties.getAuth().getPassword();
+            this.username = properties.getAuth().getOauth2().getUsername();
+            this.password = properties.getAuth().getOauth2().getPassword();
             logger.debug("Using properties from McpServerProperties: clientId={}, username={}", this.clientId, this.username);
         } else {
             this.clientId = System.getProperty("intacct.client-id", "");

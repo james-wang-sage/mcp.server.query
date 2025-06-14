@@ -1,10 +1,13 @@
 package org.springframework.ai.mcp.sample.server.config;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
- * Configuration properties for MCP Server supporting both STDIO and SSE transport modes.
+ * Configuration properties for MCP Server supporting STDIO transport mode.
  * This class provides type-safe configuration binding for all MCP server settings.
  */
 @ConfigurationProperties(prefix = "mcp.server")
@@ -47,16 +50,16 @@ public class McpServerProperties {
     private StdioConfig stdio = new StdioConfig();
 
     /**
-     * SSE transport configuration
-     */
-    @NestedConfigurationProperty
-    private SseConfig sse = new SseConfig();
-
-    /**
      * Authentication configuration
      */
     @NestedConfigurationProperty
     private AuthConfig auth = new AuthConfig();
+
+    /**
+     * Tool integration configuration
+     */
+    @NestedConfigurationProperty
+    private ToolIntegrationConfig toolIntegration = new ToolIntegrationConfig();
 
     // Getters and setters
     public String getName() {
@@ -115,20 +118,37 @@ public class McpServerProperties {
         this.stdio = stdio;
     }
 
-    public SseConfig getSse() {
-        return sse;
-    }
-
-    public void setSse(SseConfig sse) {
-        this.sse = sse;
-    }
-
     public AuthConfig getAuth() {
         return auth;
     }
 
     public void setAuth(AuthConfig auth) {
         this.auth = auth;
+    }
+
+    public ToolIntegrationConfig getToolIntegration() {
+        return toolIntegration;
+    }
+
+    public void setToolIntegration(ToolIntegrationConfig toolIntegration) {
+        this.toolIntegration = toolIntegration;
+    }
+
+    /**
+     * Server type enumeration
+     */
+    public enum ServerType {
+        SYNC,
+        ASYNC
+    }
+
+    /**
+     * Authentication mode enumeration
+     */
+    public enum AuthMode {
+        NONE,
+        OAUTH2,
+        BASIC
     }
 
     /**
@@ -176,160 +196,6 @@ public class McpServerProperties {
     }
 
     /**
-     * SSE transport specific configuration
-     */
-    public static class SseConfig {
-        /**
-         * Enable SSE transport
-         */
-        private boolean enabled = false;
-
-        /**
-         * Server port for SSE transport
-         */
-        private int port = 8080;
-
-        /**
-         * Base path for SSE endpoints
-         */
-        private String path = "/mcp";
-
-        /**
-         * CORS configuration
-         */
-        @NestedConfigurationProperty
-        private CorsConfig cors = new CorsConfig();
-
-        /**
-         * Connection timeout in seconds
-         */
-        private long connectionTimeoutSeconds = 300;
-
-        /**
-         * Maximum number of concurrent connections
-         */
-        private int maxConnections = 100;
-
-        public boolean isEnabled() {
-            return enabled;
-        }
-
-        public void setEnabled(boolean enabled) {
-            this.enabled = enabled;
-        }
-
-        public int getPort() {
-            return port;
-        }
-
-        public void setPort(int port) {
-            this.port = port;
-        }
-
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
-
-        public CorsConfig getCors() {
-            return cors;
-        }
-
-        public void setCors(CorsConfig cors) {
-            this.cors = cors;
-        }
-
-        public long getConnectionTimeoutSeconds() {
-            return connectionTimeoutSeconds;
-        }
-
-        public void setConnectionTimeoutSeconds(long connectionTimeoutSeconds) {
-            this.connectionTimeoutSeconds = connectionTimeoutSeconds;
-        }
-
-        public int getMaxConnections() {
-            return maxConnections;
-        }
-
-        public void setMaxConnections(int maxConnections) {
-            this.maxConnections = maxConnections;
-        }
-    }
-
-    /**
-     * CORS configuration for SSE transport
-     */
-    public static class CorsConfig {
-        /**
-         * Allowed origins for CORS
-         */
-        private String[] allowedOrigins = {"*"};
-
-        /**
-         * Allowed methods for CORS
-         */
-        private String[] allowedMethods = {"GET", "POST", "OPTIONS"};
-
-        /**
-         * Allowed headers for CORS
-         */
-        private String[] allowedHeaders = {"*"};
-
-        /**
-         * Allow credentials in CORS requests
-         */
-        private boolean allowCredentials = true;
-
-        /**
-         * Max age for CORS preflight cache
-         */
-        private long maxAge = 3600;
-
-        public String[] getAllowedOrigins() {
-            return allowedOrigins;
-        }
-
-        public void setAllowedOrigins(String[] allowedOrigins) {
-            this.allowedOrigins = allowedOrigins;
-        }
-
-        public String[] getAllowedMethods() {
-            return allowedMethods;
-        }
-
-        public void setAllowedMethods(String[] allowedMethods) {
-            this.allowedMethods = allowedMethods;
-        }
-
-        public String[] getAllowedHeaders() {
-            return allowedHeaders;
-        }
-
-        public void setAllowedHeaders(String[] allowedHeaders) {
-            this.allowedHeaders = allowedHeaders;
-        }
-
-        public boolean isAllowCredentials() {
-            return allowCredentials;
-        }
-
-        public void setAllowCredentials(boolean allowCredentials) {
-            this.allowCredentials = allowCredentials;
-        }
-
-        public long getMaxAge() {
-            return maxAge;
-        }
-
-        public void setMaxAge(long maxAge) {
-            this.maxAge = maxAge;
-        }
-    }
-
-    /**
      * Authentication configuration
      */
     public static class AuthConfig {
@@ -337,21 +203,6 @@ public class McpServerProperties {
          * Authentication mode
          */
         private AuthMode mode = AuthMode.NONE;
-
-        /**
-         * Username for authentication
-         */
-        private String username;
-
-        /**
-         * Password for authentication
-         */
-        private String password;
-
-        /**
-         * Base URL for Intacct API
-         */
-        private String baseUrl;
 
         /**
          * OAuth2 configuration
@@ -373,30 +224,6 @@ public class McpServerProperties {
             this.mode = mode;
         }
 
-        public String getUsername() {
-            return username;
-        }
-
-        public void setUsername(String username) {
-            this.username = username;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
-
-        public String getBaseUrl() {
-            return baseUrl;
-        }
-
-        public void setBaseUrl(String baseUrl) {
-            this.baseUrl = baseUrl;
-        }
-
         public OAuth2Config getOauth2() {
             return oauth2;
         }
@@ -412,41 +239,33 @@ public class McpServerProperties {
         public void setSession(SessionConfig session) {
             this.session = session;
         }
+
+        // 代理方法，便于兼容 AuthService 代码
+        public String getBaseUrl() {
+            return oauth2.getBaseUrl();
+        }
+        public String getUsername() {
+            return oauth2.getUsername();
+        }
+        public String getPassword() {
+            return oauth2.getPassword();
+        }
     }
 
     /**
-     * OAuth2 specific configuration
+     * OAuth2 configuration
      */
     public static class OAuth2Config {
-        /**
-         * OAuth2 client ID
-         */
         private String clientId;
-
-        /**
-         * OAuth2 client secret
-         */
         private String clientSecret;
-
-        /**
-         * Authorization endpoint URL
-         */
         private String authorizationUri;
-
-        /**
-         * Token endpoint URL
-         */
         private String tokenUri;
-
-        /**
-         * Redirect URI for authorization callback
-         */
         private String redirectUri;
-
-        /**
-         * OAuth2 scopes
-         */
-        private String[] scopes = {};
+        private String[] scopes = new String[0];
+        // 新增字段
+        private String baseUrl;
+        private String username;
+        private String password;
 
         public String getClientId() {
             return clientId;
@@ -495,25 +314,33 @@ public class McpServerProperties {
         public void setScopes(String[] scopes) {
             this.scopes = scopes;
         }
+
+        public String getBaseUrl() {
+            return baseUrl;
+        }
+        public void setBaseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
+        }
+        public String getUsername() {
+            return username;
+        }
+        public void setUsername(String username) {
+            this.username = username;
+        }
+        public String getPassword() {
+            return password;
+        }
+        public void setPassword(String password) {
+            this.password = password;
+        }
     }
 
     /**
-     * Session management configuration
+     * Session configuration
      */
     public static class SessionConfig {
-        /**
-         * Session timeout in seconds
-         */
         private long timeoutSeconds = 3600;
-
-        /**
-         * Maximum number of concurrent sessions
-         */
         private int maxSessions = 1000;
-
-        /**
-         * Session cleanup interval in seconds
-         */
         private long cleanupIntervalSeconds = 300;
 
         public long getTimeoutSeconds() {
@@ -542,16 +369,35 @@ public class McpServerProperties {
     }
 
     /**
-     * Server type enumeration
+     * Tool integration configuration
      */
-    public enum ServerType {
-        SYNC, ASYNC
-    }
+    public static class ToolIntegrationConfig {
+        private List<String> tools = new ArrayList<>();
+        private List<String> resources = new ArrayList<>();
+        private List<String> prompts = new ArrayList<>();
 
-    /**
-     * Authentication mode enumeration
-     */
-    public enum AuthMode {
-        NONE, OAUTH2, BASIC
+        public List<String> getTools() {
+            return tools;
+        }
+
+        public void setTools(List<String> tools) {
+            this.tools = tools;
+        }
+
+        public List<String> getResources() {
+            return resources;
+        }
+
+        public void setResources(List<String> resources) {
+            this.resources = resources;
+        }
+
+        public List<String> getPrompts() {
+            return prompts;
+        }
+
+        public void setPrompts(List<String> prompts) {
+            this.prompts = prompts;
+        }
     }
 }
